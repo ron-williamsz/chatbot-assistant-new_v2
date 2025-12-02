@@ -1,0 +1,109 @@
+
+        <!DOCTYPE html>
+        <html lang="pt-BR">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Notificação de Multa</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    margin: 40px;
+                    line-height: 1.6;
+                }
+                .header {
+                    text-align: center;
+                    margin-bottom: 30px;
+                }
+                .title {
+                    font-size: 24px;
+                    font-weight: bold;
+                    margin-bottom: 20px;
+                    text-transform: uppercase;
+                }
+                .section {
+                    margin-bottom: 20px;
+                }
+                .section-title {
+                    font-weight: bold;
+                    font-size: 16px;
+                    margin-bottom: 10px;
+                }
+                .info-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 20px;
+                }
+                .info-table th, .info-table td {
+                    border: 1px solid #ddd;
+                    padding: 8px;
+                }
+                .info-table th {
+                    background-color: #f2f2f2;
+                    text-align: left;
+                    width: 30%;
+                }
+                .footer {
+                    margin-top: 50px;
+                    font-style: italic;
+                    font-size: 12px;
+                    color: #666;
+                    text-align: center;
+                }
+                .signature {
+                    margin-top: 80px;
+                    border-top: 1px solid #000;
+                    width: 200px;
+                    text-align: center;
+                    padding-top: 10px;
+                }
+                .highlight {
+                    font-weight: bold;
+                    color: #d9534f;
+                }
+                @media print {
+                    body {
+                        margin: 0;
+                        padding: 20px;
+                    }
+                    .no-print {
+                        display: none;
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <div class="title">Notificação de Multa</div>
+            </div>
+            
+            <table class="info-table">
+                <tr>
+                    <th>Data da Infração:</th>
+                    <td>2023-05-08</td>
+                </tr>
+                <tr>
+                    <th>Valor da Multa:</th>
+                    <td class="highlight">R$ 150,00</td>
+                </tr>
+            </table>
+            
+            <div class="section">
+                <div class="section-title">Descrição da Infração:</div>
+                <div>Teste de multa via API</div>
+            </div>
+            
+            <div class="signature">
+                Assinatura do Responsável
+            </div>
+            
+            <div class="footer">
+                Este documento foi gerado automaticamente pelo sistema em 08/05/2025 16:35:01.
+            </div>
+            
+            <div class="no-print" style="margin-top: 30px; text-align: center;">
+                <button onclick="window.print()">Imprimir Documento</button>
+            </div>
+        </body>
+        </html>
+        

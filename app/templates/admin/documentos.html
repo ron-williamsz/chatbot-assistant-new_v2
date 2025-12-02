@@ -1,0 +1,1454 @@
+{% extends "base.html" %}
+
+{% block title %}Gestão de Documentos - Administração{% endblock %}
+
+{% block extra_head %}
+<style>
+    .stats-card {
+        transition: all 0.3s ease;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    
+    .tab-button {
+        transition: all 0.2s ease;
+    }
+    
+    .tab-button.active {
+        background-color: #dc2626;
+        color: white;
+    }
+    
+    .document-item {
+        transition: all 0.2s ease;
+    }
+    
+    .document-item:hover {
+        background-color: #f8fafc;
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 9999px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+    
+    .status-pendente { background: #fef3c7; color: #92400e; }
+    .status-paga { background: #d1fae5; color: #065f46; }
+    .status-cancelada { background: #fee2e2; color: #991b1b; }
+    .status-ativa { background: #dbeafe; color: #1e40af; }
+    
+    .fade-in {
+        animation: fadeIn 0.3s ease-in;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* Estilos para upload de imagens */
+    .upload-container {
+        background: #f8fafc !important;
+        border: 2px dashed #cbd5e1 !important;
+        border-radius: 12px;
+        padding: 20px;
+        margin: 10px 0;
+        transition: all 0.3s ease;
+    }
+    
+    .upload-area {
+        text-align: center;
+        padding: 30px 20px;
+        cursor: pointer;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    
+    .upload-area:hover {
+        background: #f1f5f9;
+        border-color: #3b82f6;
+    }
+    
+    .upload-area.dragover {
+        background: #dbeafe;
+        border-color: #3b82f6;
+        transform: scale(1.02);
+    }
+    
+    .upload-icon {
+        font-size: 48px;
+        color: #64748b;
+        margin-bottom: 15px;
+    }
+    
+    .upload-text {
+        color: #475569;
+        font-size: 16px;
+        margin-bottom: 20px;
+    }
+    
+    .upload-text strong {
+        color: #1e293b;
+        font-weight: 600;
+    }
+    
+    .upload-text small {
+        color: #64748b;
+        font-size: 14px;
+    }
+    
+    .uploaded-images {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin: 20px 0;
+    }
+    
+    .image-preview {
+        position: relative;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .image-preview:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .image-preview img {
+        width: 100%;
+        height: 120px;
+        object-fit: cover;
+        display: block;
+    }
+    
+    .image-info {
+        padding: 10px;
+        background: white;
+    }
+    
+    .image-name {
+        font-size: 12px;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .image-size {
+        font-size: 11px;
+        color: #64748b;
+    }
+    
+    .btn-remove {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: #ef4444;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 12px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    .btn-remove:hover {
+        background: #dc2626;
+        transform: scale(1.1);
+    }
+    
+    .upload-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+    
+    .btn-upload, .btn-skip, .btn-confirm {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .btn-upload {
+        background: #3b82f6;
+        color: white;
+    }
+    
+    .btn-upload:hover {
+        background: #2563eb;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+    }
+    
+    .btn-skip {
+        background: #6b7280;
+        color: white;
+    }
+    
+    .btn-skip:hover {
+        background: #4b5563;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(107, 114, 128, 0.3);
+    }
+    
+    .btn-confirm {
+        background: #10b981;
+        color: white;
+    }
+    
+    .btn-confirm:hover {
+        background: #059669;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <!-- Logo e Navegação -->
+                <div class="flex items-center space-x-8">
+                    <div class="flex items-center space-x-3">
+                        <i class="fas fa-robot text-2xl text-primary-600"></i>
+                        <h1 class="text-xl font-semibold text-gray-900">ZANGARI Assistente</h1>
+                    </div>
+                    
+                    <!-- Tabs de navegação - só para admin -->
+                    {% if user.tipo == 'administrador' or user.is_admin %}
+                    <nav class="flex space-x-1">
+                        <a href="/admin/assistants" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
+                            Assistentes
+                        </a>
+                        <a href="/admin/users" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
+                            Usuários
+                        </a>
+                        <a href="/admin/wallets" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
+                            Carteiras
+                        </a>
+                        <a href="/documentos" class="px-4 py-2 text-sm font-medium text-primary-600 bg-primary-50 rounded-lg flex items-center">
+                            <i class="fas fa-file-alt mr-2"></i>
+                            Documentos
+                        </a>
+                        <a href="/admin/transcricao" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg flex items-center">
+                            <i class="fas fa-microphone mr-2"></i>
+                            Transcrição
+                        </a>
+                        <a href="/admin/security" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg flex items-center">
+                            <i class="fas fa-shield-alt mr-2"></i>
+                            Segurança
+                        </a>
+                    </nav>
+                    {% endif %}
+                </div>
+                
+                <!-- Botões de ação -->
+                <div class="flex items-center space-x-3">
+                    <a href="/chat" class="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg">
+                        <i class="fas fa-comments"></i>
+                        <span>Acessar Chat</span>
+                    </a>
+                    <a href="/dashboard" class="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg border border-gray-300">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="/auth/logout" class="flex items-center space-x-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Sair</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Título da página -->
+    <div class="bg-white border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <h1 class="text-2xl font-bold text-gray-900 flex items-center">
+                <i class="fas fa-file-alt text-red-600 mr-3"></i>
+                Gestão de Documentos
+            </h1>
+            <p class="text-gray-600 mt-1">Administre multas e advertências do condomínio</p>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+        <!-- Estatísticas -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+            <div class="bg-white rounded-lg shadow p-6 stats-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">Total de Multas</p>
+                        <p class="text-2xl font-bold text-gray-900" id="totalMultas">0</p>
+                    </div>
+                    <i class="fas fa-file-invoice-dollar text-3xl text-red-500"></i>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow p-6 stats-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">Multas Pendentes</p>
+                        <p class="text-2xl font-bold text-yellow-600" id="multasPendentes">0</p>
+                    </div>
+                    <i class="fas fa-clock text-3xl text-yellow-500"></i>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow p-6 stats-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">Valor Pendente</p>
+                        <p class="text-2xl font-bold text-red-600" id="valorPendente">R$ 0</p>
+                    </div>
+                    <i class="fas fa-dollar-sign text-3xl text-red-500"></i>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow p-6 stats-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">Total Advertências</p>
+                        <p class="text-2xl font-bold text-gray-900" id="totalAdvertencias">0</p>
+                    </div>
+                    <i class="fas fa-exclamation-triangle text-3xl text-orange-500"></i>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow p-6 stats-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">Advertências Ativas</p>
+                        <p class="text-2xl font-bold text-blue-600" id="advertenciasAtivas">0</p>
+                    </div>
+                    <i class="fas fa-bell text-3xl text-blue-500"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs e Conteúdo Principal -->
+        <div class="bg-white rounded-lg shadow">
+            <!-- Tabs -->
+            <div class="border-b border-gray-200">
+                <div class="flex">
+                    <button onclick="switchTab('multas')" 
+                            class="tab-button px-6 py-4 text-sm font-medium border-b-2 border-transparent hover:text-red-600 focus:outline-none active"
+                            id="tab-multas">
+                        <i class="fas fa-file-invoice-dollar mr-2"></i>
+                        Multas
+                    </button>
+                    <button onclick="switchTab('advertencias')" 
+                            class="tab-button px-6 py-4 text-sm font-medium border-b-2 border-transparent hover:text-red-600 focus:outline-none"
+                            id="tab-advertencias">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        Advertências
+                    </button>
+                </div>
+            </div>
+
+            <!-- Conteúdo das Tabs -->
+            <div class="p-6">
+                <!-- Tab Multas -->
+                <div id="content-multas" class="tab-content">
+                    <!-- Barra de Ações -->
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-4 sm:space-y-0">
+                        <div class="flex items-center space-x-4">
+                            <input type="text" 
+                                   id="searchMultas" 
+                                   placeholder="Buscar por unidade..." 
+                                   class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                            <select id="filterStatusMulta" 
+                                    class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                                <option value="">Todos os status</option>
+                                <option value="pendente">Pendente</option>
+                                <option value="paga">Paga</option>
+                                <option value="cancelada">Cancelada</option>
+                            </select>
+                        </div>
+                        <button onclick="openNovaMultaModal()" 
+                                class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center">
+                            <i class="fas fa-plus mr-2"></i>
+                            Nova Multa
+                        </button>
+                    </div>
+
+                    <!-- Lista de Multas -->
+                    <div id="listaMultas" class="space-y-4">
+                        <!-- Items serão carregados dinamicamente -->
+                    </div>
+                </div>
+
+                <!-- Tab Advertências -->
+                <div id="content-advertencias" class="tab-content hidden">
+                    <!-- Barra de Ações -->
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-4 sm:space-y-0">
+                        <div class="flex items-center space-x-4">
+                            <input type="text" 
+                                   id="searchAdvertencias" 
+                                   placeholder="Buscar por unidade..." 
+                                   class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                            <select id="filterStatusAdvertencia" 
+                                    class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                                <option value="">Todos os status</option>
+                                <option value="ativa">Ativa</option>
+                                <option value="resolvida">Resolvida</option>
+                            </select>
+                        </div>
+                        <button onclick="openNovaAdvertenciaModal()" 
+                                class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 flex items-center">
+                            <i class="fas fa-plus mr-2"></i>
+                            Nova Advertência
+                        </button>
+                    </div>
+
+                    <!-- Lista de Advertências -->
+                    <div id="listaAdvertencias" class="space-y-4">
+                        <!-- Items serão carregados dinamicamente -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nova Multa -->
+<div id="modalNovaMulta" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-gray-900">Nova Multa</h2>
+                <button onclick="closeNovaMultaModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <form id="formNovaMulta" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Condomínio/Assistant *</label>
+                    <div class="relative">
+                        <input type="text" 
+                               id="assistantSearchMulta" 
+                               placeholder="Digite para buscar o condomínio..."
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
+                               autocomplete="off">
+                        <input type="hidden" name="assistant_id" id="assistantSelectMulta" required>
+                        <div id="assistantDropdownMulta" class="absolute z-10 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto hidden mt-1">
+                            <!-- Options serão carregadas aqui -->
+                        </div>
+                        <i class="fas fa-chevron-down absolute right-3 top-3 text-gray-400 pointer-events-none"></i>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Unidade *</label>
+                        <input type="text" name="unidade" required placeholder="Ex: 101"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Bloco</label>
+                        <input type="text" name="bloco" placeholder="Ex: A"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Data da Infração *</label>
+                        <input type="date" name="data_infracao" required
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Valor (R$) *</label>
+                        <input type="number" name="valor" step="0.01" required
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500">
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Descrição da Infração *</label>
+                    <textarea name="descricao" rows="4" required
+                              placeholder="Descreva detalhadamente o que ocorreu..."
+                              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"></textarea>
+                </div>
+                
+                <!-- Upload de Imagens para Multa -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Imagens Comprobatórias (Opcional)</label>
+                    <div id="uploadImageContainerMulta" class="upload-container">
+                        <div class="upload-area" id="uploadAreaMulta">
+                            <div class="upload-icon">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                            </div>
+                            <div class="upload-text">
+                                <strong>Clique para selecionar imagens</strong> ou arraste aqui<br>
+                                <small>Máximo 3 imagens • JPG, PNG ou JPEG • Até 5MB cada</small>
+                            </div>
+                            <input type="file" id="imageInputMulta" multiple accept=".jpg,.jpeg,.png" style="display: none;">
+                        </div>
+                        <div id="uploadedImagesMulta" class="uploaded-images"></div>
+                        <div class="upload-actions">
+                            <button type="button" id="selectImagesMulta" class="btn-upload">
+                                <i class="fas fa-plus"></i> Selecionar Imagens
+                            </button>
+                            <button type="button" id="skipImagesMulta" class="btn-skip">
+                                <i class="fas fa-arrow-right"></i> Pular
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-blue-50 p-4 rounded-lg">
+                    <p class="text-sm text-blue-800">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        O documento será gerado automaticamente usando a <strong>IA do condomínio selecionado</strong>.
+                        <br><small class="text-blue-600">💡 O assistente criará um texto personalizado e específico para o tipo de infração/ocorrência informada.</small>
+                    </p>
+                </div>
+                
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" onclick="closeNovaMultaModal()"
+                            class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
+                        Cancelar
+                    </button>
+                    <button type="submit" id="btnCriarMulta"
+                            class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center">
+                        <span>Gerar Multa</span>
+                        <i class="fas fa-spinner fa-spin ml-2 hidden" id="spinnerMulta"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nova Advertência -->
+<div id="modalNovaAdvertencia" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-gray-900">Nova Advertência</h2>
+                <button onclick="closeNovaAdvertenciaModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <form id="formNovaAdvertencia" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Condomínio/Assistant *</label>
+                    <div class="relative">
+                        <input type="text" 
+                               id="assistantSearchAdvertencia" 
+                               placeholder="Digite para buscar o condomínio..."
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                               autocomplete="off">
+                        <input type="hidden" name="assistant_id" id="assistantSelect" required>
+                        <div id="assistantDropdownAdvertencia" class="absolute z-10 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto hidden mt-1">
+                            <!-- Options serão carregadas aqui -->
+                        </div>
+                        <i class="fas fa-chevron-down absolute right-3 top-3 text-gray-400 pointer-events-none"></i>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Unidade *</label>
+                        <input type="text" name="unidade" required placeholder="Ex: 101"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Bloco</label>
+                        <input type="text" name="bloco" placeholder="Ex: A"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Data da Ocorrência *</label>
+                        <input type="date" name="data_ocorrencia" required
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500">
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Descrição da Ocorrência *</label>
+                    <textarea name="descricao" rows="4" required
+                              placeholder="Descreva detalhadamente o que ocorreu..."
+                              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"></textarea>
+                </div>
+                
+                <!-- Upload de Imagens -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Imagens Comprobatórias (Opcional)</label>
+                    <div id="uploadImageContainer" class="upload-container">
+                        <div class="upload-area" id="uploadArea">
+                            <div class="upload-icon">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                            </div>
+                            <div class="upload-text">
+                                <strong>Clique para selecionar imagens</strong> ou arraste aqui<br>
+                                <small>Máximo 3 imagens • JPG, PNG ou JPEG • Até 5MB cada</small>
+                            </div>
+                            <input type="file" id="imageInput" multiple accept=".jpg,.jpeg,.png" style="display: none;">
+                        </div>
+                        <div id="uploadedImages" class="uploaded-images"></div>
+                        <div class="upload-actions">
+                            <button type="button" id="selectImages" class="btn-upload">
+                                <i class="fas fa-plus"></i> Selecionar Imagens
+                            </button>
+                            <button type="button" id="skipImages" class="btn-skip">
+                                <i class="fas fa-arrow-right"></i> Pular
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-blue-50 p-4 rounded-lg">
+                    <p class="text-sm text-blue-800">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        O documento será gerado automaticamente usando a <strong>IA do condomínio selecionado</strong>.
+                        <br><small class="text-blue-600">💡 O assistente criará um texto personalizado e específico para o tipo de infração/ocorrência informada.</small>
+                    </p>
+                </div>
+                
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" onclick="closeNovaAdvertenciaModal()"
+                            class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
+                        Cancelar
+                    </button>
+                    <button type="submit" id="btnCriarAdvertencia"
+                            class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 flex items-center">
+                        <span>Gerar Advertência</span>
+                        <i class="fas fa-spinner fa-spin ml-2 hidden" id="spinnerAdvertencia"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/image-upload.js') }}"></script>
+<script>
+// Variáveis globais
+let userAssistants = [];
+let multas = [];
+let advertencias = [];
+
+// Variáveis para controle de imagens
+let selectedImagesAdvertencia = [];
+let selectedImagesMulta = [];
+
+// Inicialização
+document.addEventListener('DOMContentLoaded', function() {
+    carregarEstatisticas();
+    carregarAssistants();
+    carregarMultas();
+    
+    // Event listeners
+    document.getElementById('searchMultas').addEventListener('input', debounce(carregarMultas, 300));
+    document.getElementById('filterStatusMulta').addEventListener('change', carregarMultas);
+    document.getElementById('searchAdvertencias').addEventListener('input', debounce(carregarAdvertencias, 300));
+    document.getElementById('filterStatusAdvertencia').addEventListener('change', carregarAdvertencias);
+    
+    // Forms
+    document.getElementById('formNovaMulta').addEventListener('submit', criarMulta);
+    document.getElementById('formNovaAdvertencia').addEventListener('submit', criarAdvertencia);
+    
+    // Configurar upload de imagens
+    configurarUploadImagesAdmin();
+});
+
+// Configurar upload de imagens para os formulários administrativos
+function configurarUploadImagesAdmin() {
+    // Upload para Advertência
+    configurarUploadAdmin({
+        uploadArea: 'uploadArea',
+        imageInput: 'imageInput',
+        selectButton: 'selectImages',
+        skipButton: 'skipImages',
+        uploadedImagesDiv: 'uploadedImages',
+        selectedImagesArray: 'selectedImagesAdvertencia'
+    });
+    
+    // Upload para Multa
+    configurarUploadAdmin({
+        uploadArea: 'uploadAreaMulta',
+        imageInput: 'imageInputMulta',
+        selectButton: 'selectImagesMulta',
+        skipButton: 'skipImagesMulta',
+        uploadedImagesDiv: 'uploadedImagesMulta',
+        selectedImagesArray: 'selectedImagesMulta'
+    });
+}
+
+// Função para configurar upload com IDs específicos
+function configurarUploadAdmin(config) {
+    const uploadArea = document.getElementById(config.uploadArea);
+    const imageInput = document.getElementById(config.imageInput);
+    const selectButton = document.getElementById(config.selectButton);
+    const skipButton = document.getElementById(config.skipButton);
+    const uploadedImagesDiv = document.getElementById(config.uploadedImagesDiv);
+    
+    let selectedImages = [];
+    
+    // Evento de clique na área de upload
+    uploadArea.addEventListener('click', () => {
+        imageInput.click();
+    });
+    
+    // Evento de clique no botão selecionar
+    selectButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        imageInput.click();
+    });
+    
+    // Evento de seleção de arquivos
+    imageInput.addEventListener('change', (e) => {
+        processarImagensAdmin(e.target.files, selectedImages, uploadedImagesDiv);
+    });
+    
+    // Eventos de drag and drop
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+    
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('dragover');
+    });
+    
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        processarImagensAdmin(e.dataTransfer.files, selectedImages, uploadedImagesDiv);
+    });
+    
+    // Evento de pular
+    skipButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        selectedImages.length = 0;
+        uploadedImagesDiv.innerHTML = '';
+    });
+    
+    // Salvar referência das imagens na variável correspondente
+    if (config.selectedImagesArray === 'selectedImagesAdvertencia') {
+        selectedImagesAdvertencia = selectedImages;
+    } else if (config.selectedImagesArray === 'selectedImagesMulta') {
+        selectedImagesMulta = selectedImages;
+    }
+}
+
+// Função para processar imagens no contexto administrativo
+function processarImagensAdmin(files, selectedImages, uploadedImagesDiv, maximo = 3) {
+    const newImages = Array.from(files);
+    
+    // Verificar limite
+    if (selectedImages.length + newImages.length > maximo) {
+        showToast(`Você pode selecionar no máximo ${maximo} imagens`, 'error');
+        return;
+    }
+    
+    // Validar cada arquivo
+    for (let file of newImages) {
+        // Verificar formato
+        if (!file.type.match('image/(jpeg|jpg|png)')) {
+            showToast(`Formato não suportado: ${file.name}. Use apenas JPG, PNG ou JPEG.`, 'error');
+            continue;
+        }
+        
+        // Verificar tamanho (5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            showToast(`Arquivo muito grande: ${file.name}. Máximo 5MB por imagem.`, 'error');
+            continue;
+        }
+        
+        selectedImages.push(file);
+    }
+    
+    // Atualizar visualização
+    atualizarPreviewImagensAdmin(selectedImages, uploadedImagesDiv);
+}
+
+// Função para atualizar preview das imagens no contexto administrativo
+function atualizarPreviewImagensAdmin(selectedImages, uploadedImagesDiv) {
+    uploadedImagesDiv.innerHTML = '';
+    
+    selectedImages.forEach((file, index) => {
+        const imageDiv = document.createElement('div');
+        imageDiv.className = 'image-preview';
+        
+        // Criar URL para preview
+        const imageUrl = URL.createObjectURL(file);
+        
+        imageDiv.innerHTML = `
+            <img src="${imageUrl}" alt="${file.name}">
+            <button class="btn-remove" onclick="removerImagemAdmin(${index}, '${uploadedImagesDiv.id}')">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="image-info">
+                <div class="image-name">${file.name}</div>
+                <div class="image-size">${formatarTamanhoAdmin(file.size)}</div>
+            </div>
+        `;
+        
+        uploadedImagesDiv.appendChild(imageDiv);
+    });
+}
+
+// Função global para remover imagem no contexto administrativo
+window.removerImagemAdmin = function(index, uploadedImagesDivId) {
+    const uploadedImagesDiv = document.getElementById(uploadedImagesDivId);
+    let selectedImages;
+    
+    // Determinar qual array usar
+    if (uploadedImagesDivId === 'uploadedImages') {
+        selectedImages = selectedImagesAdvertencia;
+    } else if (uploadedImagesDivId === 'uploadedImagesMulta') {
+        selectedImages = selectedImagesMulta;
+    }
+    
+    if (selectedImages && selectedImages[index]) {
+        // Revogar URL para liberar memória
+        const file = selectedImages[index];
+        const imageDiv = uploadedImagesDiv.children[index];
+        const img = imageDiv.querySelector('img');
+        if (img && img.src.startsWith('blob:')) {
+            URL.revokeObjectURL(img.src);
+        }
+        
+        selectedImages.splice(index, 1);
+        atualizarPreviewImagensAdmin(selectedImages, uploadedImagesDiv);
+    }
+};
+
+// Função para formatar tamanho do arquivo
+function formatarTamanhoAdmin(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Upload de imagens para o servidor no contexto administrativo
+async function uploadImagensParaServidorAdmin(images, tipo) {
+    if (images.length === 0) return null;
+    
+    try {
+        const formData = new FormData();
+        const documentoId = Date.now().toString();
+        
+        formData.append('documento_id', documentoId);
+        formData.append('tipo', tipo);
+        
+        // Adicionar cada imagem ao FormData
+        images.forEach((file, index) => {
+            formData.append(`imagem_${index}`, file);
+        });
+        
+        const response = await fetch('/upload-imagens-documento', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (!response.ok) {
+            throw new Error('Erro ao fazer upload das imagens');
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            return {
+                documento_id: documentoId,
+                imagens: result.imagens,
+                total: result.total
+            };
+        } else {
+            throw new Error(result.error || 'Erro desconhecido no upload');
+        }
+        
+    } catch (error) {
+        console.error('Erro no upload de imagens:', error);
+        showToast('Erro no upload de imagens: ' + error.message, 'error');
+        return null;
+    }
+}
+
+// Carregar assistants disponíveis para o usuário
+async function carregarAssistants() {
+    try {
+        // Solicitar mais registros para garantir que todos os condomínios sejam carregados
+        const response = await fetch('/list-assistants?limit=1000');
+        const data = await response.json();
+        
+        userAssistants = data.assistants || [];
+        
+        // Ordenar assistants por nome para melhor usabilidade
+        userAssistants.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        
+        // Configurar dropdowns pesquisáveis
+        setupSearchableDropdown('assistantSearchMulta', 'assistantSelectMulta', 'assistantDropdownMulta', userAssistants);
+        setupSearchableDropdown('assistantSearchAdvertencia', 'assistantSelect', 'assistantDropdownAdvertencia', userAssistants);
+        
+        console.log(`Carregados ${userAssistants.length} condomínios`);
+        
+    } catch (error) {
+        console.error('Erro ao carregar assistants:', error);
+        showToast('Erro ao carregar condomínios', 'error');
+    }
+}
+
+// Configurar dropdown pesquisável
+function setupSearchableDropdown(searchInputId, hiddenInputId, dropdownId, assistants) {
+    const searchInput = document.getElementById(searchInputId);
+    const hiddenInput = document.getElementById(hiddenInputId);
+    const dropdown = document.getElementById(dropdownId);
+    
+    if (!searchInput || !hiddenInput || !dropdown) return;
+    
+    // Função para renderizar opções
+    function renderOptions(filteredAssistants = assistants) {
+        dropdown.innerHTML = '';
+        
+        if (filteredAssistants.length === 0) {
+            dropdown.innerHTML = '<div class="px-4 py-2 text-gray-500">Nenhum condomínio encontrado</div>';
+            return;
+        }
+        
+        filteredAssistants.forEach(assistant => {
+            const option = document.createElement('div');
+            option.className = 'px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0';
+            option.textContent = assistant.name;
+            option.onclick = () => {
+                searchInput.value = assistant.name;
+                hiddenInput.value = assistant.id;
+                dropdown.classList.add('hidden');
+                
+                // Validar campo obrigatório
+                hiddenInput.dispatchEvent(new Event('change'));
+            };
+            dropdown.appendChild(option);
+        });
+    }
+    
+    // Evento de foco - mostrar todas as opções
+    searchInput.addEventListener('focus', () => {
+        renderOptions();
+        dropdown.classList.remove('hidden');
+    });
+    
+    // Evento de digitação - filtrar opções
+    searchInput.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        
+        if (searchTerm === '') {
+            hiddenInput.value = '';
+            renderOptions();
+        } else {
+            const filtered = assistants.filter(assistant => 
+                assistant.name.toLowerCase().includes(searchTerm)
+            );
+            renderOptions(filtered);
+        }
+        
+        dropdown.classList.remove('hidden');
+    });
+    
+    // Ocultar dropdown ao clicar fora
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.classList.add('hidden');
+        }
+    });
+    
+    // Teclas de navegação
+    searchInput.addEventListener('keydown', (e) => {
+        const options = dropdown.querySelectorAll('div[onclick]');
+        const currentIndex = Array.from(options).findIndex(option => option.classList.contains('bg-blue-100'));
+        
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            const nextIndex = currentIndex < options.length - 1 ? currentIndex + 1 : 0;
+            options.forEach((option, index) => {
+                option.classList.toggle('bg-blue-100', index === nextIndex);
+            });
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            const prevIndex = currentIndex > 0 ? currentIndex - 1 : options.length - 1;
+            options.forEach((option, index) => {
+                option.classList.toggle('bg-blue-100', index === prevIndex);
+            });
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            const selectedOption = options[currentIndex];
+            if (selectedOption) {
+                selectedOption.click();
+            }
+        } else if (e.key === 'Escape') {
+            dropdown.classList.add('hidden');
+        }
+    });
+}
+
+// Carregar estatísticas
+async function carregarEstatisticas() {
+    try {
+        const response = await fetch('/api/documentos/estatisticas');
+        const stats = await response.json();
+        
+        document.getElementById('totalMultas').textContent = stats.total_multas;
+        document.getElementById('multasPendentes').textContent = stats.multas_pendentes;
+        document.getElementById('valorPendente').textContent = `R$ ${stats.valor_pendente.toFixed(2).replace('.', ',')}`;
+        document.getElementById('totalAdvertencias').textContent = stats.total_advertencias;
+        document.getElementById('advertenciasAtivas').textContent = stats.advertencias_ativas;
+    } catch (error) {
+        console.error('Erro ao carregar estatísticas:', error);
+    }
+}
+
+// Carregar multas
+async function carregarMultas() {
+    try {
+        const search = document.getElementById('searchMultas').value;
+        const status = document.getElementById('filterStatusMulta').value;
+        
+        let url = '/api/multas?';
+        if (search) url += `unidade=${encodeURIComponent(search)}&`;
+        if (status) url += `status=${status}&`;
+        
+        const response = await fetch(url);
+        multas = await response.json();
+        
+        renderizarMultas();
+    } catch (error) {
+        console.error('Erro ao carregar multas:', error);
+    }
+}
+
+// Renderizar multas
+function renderizarMultas() {
+    const container = document.getElementById('listaMultas');
+    
+    if (multas.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-12 text-gray-500">
+                <i class="fas fa-file-invoice-dollar text-6xl mb-4 opacity-20"></i>
+                <p>Nenhuma multa encontrada</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = multas.map(multa => `
+        <div class="document-item border border-gray-200 rounded-lg p-4 cursor-pointer hover:shadow-md">
+            <div class="flex justify-between items-start">
+                <div class="flex-1">
+                    <div class="flex items-center space-x-3 mb-2">
+                        <h3 class="font-semibold text-lg">${multa.numero_multa}</h3>
+                        <span class="status-badge status-${multa.status}">${multa.status.toUpperCase()}</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-gray-600">
+                        <div><i class="fas fa-building mr-1"></i> Unidade: ${multa.unidade}${multa.bloco ? ' - Bloco ' + multa.bloco : ''}</div>
+                        <div><i class="fas fa-calendar mr-1"></i> Data: ${formatarData(multa.data_infracao)}</div>
+                        <div><i class="fas fa-dollar-sign mr-1"></i> Valor: R$ ${multa.valor}</div>
+                    </div>
+                    <p class="mt-2 text-sm text-gray-700">${multa.descricao}</p>
+                    ${multa.assistant_name ? `<p class="mt-1 text-xs text-gray-500"><i class="fas fa-building mr-1"></i> ${multa.assistant_name}</p>` : ''}
+                </div>
+                <div class="flex space-x-2 ml-4">
+                    ${multa.arquivo_documento ? `
+                        <a href="${multa.arquivo_documento}" target="_blank"
+                           class="text-blue-600 hover:text-blue-800 p-2" title="Ver documento">
+                            <i class="fas fa-file-pdf"></i>
+                        </a>
+                    ` : ''}
+                    ${multa.status === 'pendente' ? `
+                        <button onclick="atualizarStatusMulta(${multa.id}, 'paga')"
+                                class="text-green-600 hover:text-green-800 p-2" title="Marcar como paga">
+                            <i class="fas fa-check"></i>
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Carregar advertências
+async function carregarAdvertencias() {
+    try {
+        const search = document.getElementById('searchAdvertencias').value;
+        const status = document.getElementById('filterStatusAdvertencia').value;
+        
+        let url = '/api/advertencias?';
+        if (search) url += `unidade=${encodeURIComponent(search)}&`;
+        if (status) url += `status=${status}&`;
+        
+        const response = await fetch(url);
+        advertencias = await response.json();
+        
+        renderizarAdvertencias();
+    } catch (error) {
+        console.error('Erro ao carregar advertências:', error);
+    }
+}
+
+// Renderizar advertências
+function renderizarAdvertencias() {
+    const container = document.getElementById('listaAdvertencias');
+    
+    if (advertencias.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-12 text-gray-500">
+                <i class="fas fa-exclamation-triangle text-6xl mb-4 opacity-20"></i>
+                <p>Nenhuma advertência encontrada</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = advertencias.map(adv => `
+        <div class="document-item border border-gray-200 rounded-lg p-4 cursor-pointer hover:shadow-md">
+            <div class="flex justify-between items-start">
+                <div class="flex-1">
+                    <div class="flex items-center space-x-3 mb-2">
+                        <h3 class="font-semibold text-lg">${adv.numero_advertencia}</h3>
+                        <span class="status-badge status-${adv.status}">${adv.status.toUpperCase()}</span>
+                        ${adv.reincidente ? '<span class="text-red-600 text-sm font-semibold">REINCIDENTE</span>' : ''}
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
+                        <div><i class="fas fa-building mr-1"></i> Unidade: ${adv.unidade}${adv.bloco ? ' - Bloco ' + adv.bloco : ''}</div>
+                        <div><i class="fas fa-calendar mr-1"></i> Data: ${formatarData(adv.data_ocorrencia)}</div>
+                    </div>
+                    <p class="mt-2 text-sm text-gray-700">${adv.descricao}</p>
+                    ${adv.assistant_name ? `<p class="mt-1 text-xs text-gray-500"><i class="fas fa-building mr-1"></i> ${adv.assistant_name}</p>` : ''}
+                </div>
+                <div class="flex space-x-2 ml-4">
+                    ${adv.arquivo_documento ? `
+                        <a href="${adv.arquivo_documento}" target="_blank"
+                           class="text-blue-600 hover:text-blue-800 p-2" title="Ver documento">
+                            <i class="fas fa-file-pdf"></i>
+                        </a>
+                    ` : ''}
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Criar multa (com upload de imagens)
+async function criarMulta(e) {
+    e.preventDefault();
+    
+    const btn = document.getElementById('btnCriarMulta');
+    const spinner = document.getElementById('spinnerMulta');
+    const btnText = btn.querySelector('span');
+    
+    // Desabilitar botão e mostrar loading
+    btn.disabled = true;
+    spinner.classList.remove('hidden');
+    btnText.textContent = 'Gerando...';
+    
+    try {
+        // Fazer upload das imagens primeiro (se houver)
+        let imagensInfo = null;
+        if (selectedImagesMulta.length > 0) {
+            imagensInfo = await uploadImagensParaServidorAdmin(selectedImagesMulta, 'multa');
+            if (!imagensInfo) {
+                throw new Error('Erro no upload das imagens');
+            }
+        }
+        
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData);
+        
+        // Verificar se assistant_id foi selecionado
+        if (!data.assistant_id) {
+            throw new Error('Por favor, selecione um condomínio/assistente');
+        }
+        
+        // Adicionar informações das imagens aos dados do documento
+        if (imagensInfo) {
+            // Incluir imagens nos dados que vão para gerar_documento_interno
+            data.documento_id = imagensInfo.documento_id;
+            data.imagens_info = imagensInfo;
+        }
+        
+        // Sempre gerar documento
+        data.gerar_documento = true;
+        
+        console.log('Enviando dados para criação de multa:', data);
+        
+        const response = await fetch('/api/multas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Erro ao criar multa');
+        }
+        
+        const result = await response.json();
+        
+        // Se gerou documento, abrir em nova aba
+        if (result.multa.arquivo_documento) {
+            window.open(result.multa.arquivo_documento, '_blank');
+        }
+        
+        showToast('Multa criada com sucesso!', 'success');
+        closeNovaMultaModal();
+        carregarMultas();
+        carregarEstatisticas();
+        
+        // Limpar imagens selecionadas
+        selectedImagesMulta.length = 0;
+        document.getElementById('uploadedImagesMulta').innerHTML = '';
+        
+    } catch (error) {
+        showToast(error.message, 'error');
+    } finally {
+        // Reabilitar botão
+        btn.disabled = false;
+        spinner.classList.add('hidden');
+        btnText.textContent = 'Gerar Multa';
+    }
+}
+
+// Criar advertência (com upload de imagens)
+async function criarAdvertencia(e) {
+    e.preventDefault();
+    
+    const btn = document.getElementById('btnCriarAdvertencia');
+    const spinner = document.getElementById('spinnerAdvertencia');
+    const btnText = btn.querySelector('span');
+    
+    // Desabilitar botão e mostrar loading
+    btn.disabled = true;
+    spinner.classList.remove('hidden');
+    btnText.textContent = 'Gerando...';
+    
+    try {
+        // Fazer upload das imagens primeiro (se houver)
+        let imagensInfo = null;
+        if (selectedImagesAdvertencia.length > 0) {
+            imagensInfo = await uploadImagensParaServidorAdmin(selectedImagesAdvertencia, 'advertencia');
+            if (!imagensInfo) {
+                throw new Error('Erro no upload das imagens');
+            }
+        }
+        
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData);
+        
+        // Verificar se assistant_id foi selecionado
+        if (!data.assistant_id) {
+            throw new Error('Por favor, selecione um condomínio/assistente');
+        }
+        
+        // Adicionar informações das imagens aos dados do documento
+        if (imagensInfo) {
+            // Incluir imagens nos dados que vão para gerar_documento_interno
+            data.documento_id = imagensInfo.documento_id;
+            data.imagens_info = imagensInfo;
+        }
+        
+        // Sempre gerar documento
+        data.gerar_documento = true;
+        
+        console.log('Enviando dados para criação de advertência:', data);
+        
+        const response = await fetch('/api/advertencias', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Erro ao criar advertência');
+        }
+        
+        const result = await response.json();
+        
+        // Se gerou documento, abrir em nova aba
+        if (result.advertencia.arquivo_documento) {
+            window.open(result.advertencia.arquivo_documento, '_blank');
+        }
+        
+        showToast('Advertência criada com sucesso!', 'success');
+        closeNovaAdvertenciaModal();
+        carregarAdvertencias();
+        carregarEstatisticas();
+        
+        // Limpar imagens selecionadas
+        selectedImagesAdvertencia.length = 0;
+        document.getElementById('uploadedImages').innerHTML = '';
+        
+    } catch (error) {
+        showToast(error.message, 'error');
+    } finally {
+        // Reabilitar botão
+        btn.disabled = false;
+        spinner.classList.add('hidden');
+        btnText.textContent = 'Gerar Advertência';
+    }
+}
+
+// Atualizar status da multa
+async function atualizarStatusMulta(multaId, novoStatus) {
+    if (!confirm(`Marcar esta multa como ${novoStatus}?`)) return;
+    
+    try {
+        const data = { status: novoStatus };
+        if (novoStatus === 'paga') {
+            data.data_pagamento = new Date().toISOString();
+        }
+        
+        const response = await fetch(`/api/multas/${multaId}/status`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) {
+            throw new Error('Erro ao atualizar status');
+        }
+        
+        showToast('Status atualizado com sucesso!', 'success');
+        carregarMultas();
+        carregarEstatisticas();
+        
+    } catch (error) {
+        showToast(error.message, 'error');
+    }
+}
+
+// Funções de UI
+function switchTab(tab) {
+    // Remover active de todos os tabs
+    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+    
+    // Ativar tab selecionado
+    document.getElementById(`tab-${tab}`).classList.add('active');
+    document.getElementById(`content-${tab}`).classList.remove('hidden');
+    
+    // Carregar dados se necessário
+    if (tab === 'advertencias' && advertencias.length === 0) {
+        carregarAdvertencias();
+    }
+}
+
+function openNovaMultaModal() {
+    document.getElementById('modalNovaMulta').classList.remove('hidden');
+    document.getElementById('modalNovaMulta').classList.add('flex');
+    document.getElementById('formNovaMulta').reset();
+    // Limpar imagens
+    selectedImagesMulta.length = 0;
+    document.getElementById('uploadedImagesMulta').innerHTML = '';
+}
+
+function closeNovaMultaModal() {
+    document.getElementById('modalNovaMulta').classList.add('hidden');
+    document.getElementById('modalNovaMulta').classList.remove('flex');
+}
+
+function openNovaAdvertenciaModal() {
+    document.getElementById('modalNovaAdvertencia').classList.remove('hidden');
+    document.getElementById('modalNovaAdvertencia').classList.add('flex');
+    document.getElementById('formNovaAdvertencia').reset();
+    // Limpar imagens
+    selectedImagesAdvertencia.length = 0;
+    document.getElementById('uploadedImages').innerHTML = '';
+}
+
+function closeNovaAdvertenciaModal() {
+    document.getElementById('modalNovaAdvertencia').classList.add('hidden');
+    document.getElementById('modalNovaAdvertencia').classList.remove('flex');
+}
+
+// Utilidades
+function formatarData(timestamp) {
+    if (!timestamp) return 'N/A';
+    const date = new Date(timestamp * 1000);
+    return date.toLocaleDateString('pt-BR');
+}
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+function showToast(message, type = 'info') {
+    // Criar toast element
+    const toast = document.createElement('div');
+    toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg text-white fade-in z-50 ${
+        type === 'success' ? 'bg-green-600' : 
+        type === 'error' ? 'bg-red-600' : 
+        'bg-blue-600'
+    }`;
+    toast.innerHTML = `
+        <div class="flex items-center">
+            <i class="fas ${
+                type === 'success' ? 'fa-check-circle' : 
+                type === 'error' ? 'fa-exclamation-circle' : 
+                'fa-info-circle'
+            } mr-2"></i>
+            ${message}
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Remover após 3 segundos
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+</script>
+{% endblock %}

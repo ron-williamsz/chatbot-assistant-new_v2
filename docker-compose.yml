@@ -1,0 +1,193 @@
+services:
+  chatbot-assistant:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: chatbot-assistant-new
+    ports:
+      - "5359:5359"
+    volumes:
+      - app_data:/app/app/data
+      - logs_data:/app/logs
+      - uploads_data:/app/app/static/uploads
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - FLASK_SECRET_KEY=${FLASK_SECRET_KEY:-sua_chave_secreta_aqui}
+      - PORT=5359
+      - WORKERS=4
+      - REDIS_URL=redis://redis-new:6379/0
+      - REDIS_HOST=redis-new
+      - REDIS_PORT=6379
+      - IS_DOCKER=true
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+      # Configurações do Transcrever
+      - TRANSCRIBER_API_URL=http://transcrever-new:3024
+      - TRANSCRIBER_API_KEY=${TRANSCRIBER_API_KEY:-zangari_solucoes_2024}
+    depends_on:
+      redis-new:
+        condition: service_healthy
+      transcrever-new:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5359/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+  # Sistema de Transcrição (Microserviço)
+  transcrever-new:
+    build:
+      context: ./transcrever
+      dockerfile: Dockerfile
+    container_name: chatbot-transcrever-new
+    ports:
+      - "3024:3024"
+    volumes:
+      - transcriber_uploads:/app/uploads
+      - transcriber_processed:/app/processed
+      - transcriber_control:/app/control
+    environment:
+      - CELERY_BROKER_URL=redis://redis-new:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis-new:6379/1
+      - API_KEY=${TRANSCRIBER_API_KEY:-zangari_solucoes_2024}
+      - ASSEMBLYAI_API_KEY=${ASSEMBLYAI_API_KEY}
+      - SPEAKERS_EXPECTED=${SPEAKERS_EXPECTED:-3}
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+      - PORT=3024
+    depends_on:
+      redis-new:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3024/healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+  # Worker Celery para transcrições
+  transcriber-celery-new:
+    build:
+      context: ./transcrever
+      dockerfile: Dockerfile
+    container_name: chatbot-transcriber-worker-new
+    command: ["celery", "-A", "tasks", "worker", "--loglevel=info", "--time-limit=7200", "--soft-time-limit=7000", "--concurrency=2"]
+    volumes:
+      - transcriber_uploads:/app/uploads
+      - transcriber_processed:/app/processed
+      - transcriber_control:/app/control
+    environment:
+      - CELERY_BROKER_URL=redis://redis-new:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis-new:6379/1
+      - ASSEMBLYAI_API_KEY=${ASSEMBLYAI_API_KEY}
+      - SPEAKERS_EXPECTED=${SPEAKERS_EXPECTED:-3}
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+    depends_on:
+      redis-new:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+  # Redis para mensageria e cache
+  redis-new:
+    image: redis:7-alpine
+    container_name: chatbot-redis-new
+    ports:
+      - "127.0.0.1:6380:6379"  # Porta 6380 para não conflitar
+    volumes:
+      - redis_data:/data
+    command: >
+      redis-server 
+      --appendonly yes 
+      --maxmemory 256mb 
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "2"
+
+networks:
+  default:
+    name: proxy-network
+    external: true
+
+volumes:
+  app_data:
+    driver: local
+  sqlite_data:
+    driver: local
+  redis_data:
+    driver: local
+  logs_data:
+    driver: local
+  uploads_data:
+    driver: local
+  # Volumes para o sistema transcrever
+  transcriber_uploads:
+    driver: local
+  transcriber_processed:
+    driver: local
+  transcriber_control:
+    driver: local 

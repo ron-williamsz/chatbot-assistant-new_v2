@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Assistente ZANGARI{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div class="max-w-md w-full">
+        <!-- Logo -->
+        <div class="text-center mb-8">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo ZANGARI" class="h-16 w-auto mx-auto mb-4">
+            <h2 class="text-3xl font-bold text-gray-900">Bem-vindo de volta</h2>
+            <p class="text-gray-600 mt-2">Entre com suas credenciais para continuar</p>
+        </div>
+        
+        <!-- Login Card -->
+        <div class="bg-white shadow-xl rounded-2xl p-8">
+            <div id="alertMessage" class="hidden mb-4 p-4 rounded-lg"></div>
+            
+            <form id="loginForm" class="space-y-6">
+                <div>
+                    <label for="username" class="block text-sm font-medium text-gray-700 mb-2">
+                        Nome de usuário
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-user text-gray-400"></i>
+                        </div>
+                        <input type="text" id="username" name="username" required
+                               class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                               placeholder="Digite seu usuário">
+                    </div>
+                </div>
+                
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+                        Senha
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-lock text-gray-400"></i>
+                        </div>
+                        <input type="password" id="password" name="password" required
+                               class="block w-full pl-10 pr-12 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                               placeholder="Digite sua senha">
+                        <button type="button" id="togglePassword" class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                            <i class="fas fa-eye text-gray-400 hover:text-gray-600" id="eyeIcon"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div>
+                    <button type="submit" 
+                            class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
+                        Entrar
+                    </button>
+                </div>
+                
+                <div class="text-center pt-4 border-t border-gray-200">
+                    <p class="text-sm text-gray-600">
+                        Não tem uma conta?
+                        <a href="{{ url_for('main.register_page') }}" class="font-medium text-primary-600 hover:text-primary-500">
+                            Criar Nova Conta
+                        </a>
+                    </p>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const alertDiv = document.getElementById('alertMessage');
+        
+        try {
+            const response = await fetch('/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                // Login bem-sucedido
+                alertDiv.className = 'block mb-4 p-4 rounded-lg bg-green-100 text-green-700';
+                alertDiv.textContent = 'Login realizado com sucesso. Redirecionando...';
+                
+                // Redirecionar baseado no tipo de usuário
+                setTimeout(() => {
+                    window.location.href = data.redirect_url || '/dashboard';
+                }, 1000);
+            } else {
+                // Erro no login
+                alertDiv.className = 'block mb-4 p-4 rounded-lg bg-red-100 text-red-700';
+                alertDiv.textContent = data.error || 'Erro de autenticação';
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            alertDiv.className = 'block mb-4 p-4 rounded-lg bg-red-100 text-red-700';
+            alertDiv.textContent = 'Erro ao conectar ao servidor';
+        }
+    });
+    
+    // Focus no campo de usuário ao carregar
+    window.addEventListener('load', function() {
+        document.getElementById('username').focus();
+        
+        // Funcionalidade para mostrar/ocultar senha
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordField = document.getElementById('password');
+        const eyeIcon = document.getElementById('eyeIcon');
+
+        togglePassword.addEventListener('click', function() {
+            const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordField.setAttribute('type', type);
+            
+            // Alternar ícone
+            if (type === 'text') {
+                eyeIcon.classList.remove('fa-eye');
+                eyeIcon.classList.add('fa-eye-slash');
+            } else {
+                eyeIcon.classList.remove('fa-eye-slash');
+                eyeIcon.classList.add('fa-eye');
+            }
+        });
+    });
+</script>
+{% endblock %} 

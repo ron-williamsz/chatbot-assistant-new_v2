@@ -1,0 +1,35 @@
+# Use uma imagem base oficial do Python
+FROM python:3.9-slim
+
+# Instalar apenas dependências essenciais do sistema
+RUN apt-get update && apt-get install -y \
+    curl \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Defina o diretório de trabalho dentro do container
+WORKDIR /app
+
+# Copie o arquivo requirements.txt para o diretório de trabalho
+COPY requirements.txt /app/
+
+# Instale as dependências necessárias
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Create necessary directories
+RUN mkdir -p /app/static/fonts \
+    && mkdir -p /app/uploads \
+    && mkdir -p /app/processed \
+    && mkdir -p /app/control
+
+# Copie a pasta static (que já contém a subpasta fonts criada)
+COPY static /app/static/
+
+# Copie o restante do código da aplicação
+COPY . /app/
+
+# Exponha a porta em que a aplicação Flask irá rodar
+EXPOSE 3023
+
+# Comando para iniciar a aplicação
+CMD ["python", "app.py"] 

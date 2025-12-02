@@ -1,0 +1,511 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #f5f7fb;
+    margin: 0;
+    min-height: 100vh;
+}
+
+.page-container {
+    display: flex;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.content-wrapper {
+    max-width: 800px;
+    width: 100%;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.header-image {
+    max-width: 100%;
+    height: auto;
+    margin-bottom: 1.5rem;
+}
+
+h1 {
+    color: #2d3748;
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.subtitle {
+    color: #718096;
+    font-size: 1.1rem;
+}
+
+.main-content {
+    padding: 1rem;
+}
+
+.upload-section {
+    margin-bottom: 2rem;
+}
+
+.file-upload-container {
+    border: 2px dashed #e2e8f0;
+    border-radius: 10px;
+    padding: 2rem;
+    text-align: center;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+
+.file-upload-container:hover {
+    border-color: #4299e1;
+    background: #ebf8ff;
+}
+
+.file-input {
+    display: none;
+}
+
+.file-label {
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.file-icon {
+    font-size: 2rem;
+}
+
+.file-text {
+    color: #4a5568;
+    font-size: 1.1rem;
+    transition: color 0.3s ease;
+}
+
+.submit-button {
+    width: 100%;
+    background: #8a1d22;
+    color: white;
+    border: none;
+    padding: 1rem;
+    border-radius: 10px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.submit-button:hover {
+    background: #da1c24;
+}
+
+.processing-container {
+    text-align: center;
+    padding: 2rem;
+    margin: 2rem 0;
+    background: #f7fafc;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.processing-text {
+    color: #4a5568;
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+}
+
+.result-container {
+    text-align: center;
+    margin-top: 2rem;
+    padding: 2rem;
+    background: #f7fafc;
+    border-radius: 10px;
+}
+
+.download-section {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 1.5rem;
+}
+
+.download-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #8a1d22;
+    color: white;
+    padding: 0.8rem 1.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: background 0.3s ease;
+    min-width: 150px;
+    justify-content: center;
+}
+
+.download-button:hover {
+    background: #da1c24;
+    transform: translateY(-2px);
+}
+
+.download-icon {
+    font-size: 1.2rem;
+}
+
+.file-upload-container.has-file {
+    border-color: #4299e1;
+    background: #ebf8ff;
+}
+
+.typewriter {
+    --blue: #4299e1;
+    --blue-dark: #2b6cb0;
+    --key: #fff;
+    --paper: #eef0fd;
+    --text: #d3d4ec;
+    --shadow: #3b4785;
+    --ink: #3b4785;
+    --page: #fafafe;
+    --page-border: #e4e8f3;
+    --paper-lines: #d3d4ec;
+    position: relative;
+    width: 120px;
+    height: 120px;
+    margin: 0 auto;
+}
+
+.typewriter .slide {
+    width: 92px;
+    height: 20px;
+    border-radius: 3px;
+    margin-left: 14px;
+    transform: translateX(14px);
+    background: linear-gradient(var(--blue), var(--blue-dark));
+    animation: slide 0.5s ease infinite alternate;
+    position: relative;
+}
+
+.typewriter .slide:before,
+.typewriter .slide:after,
+.typewriter .slide i:before {
+    content: "";
+    position: absolute;
+    background: var(--key);
+}
+
+.typewriter .slide:before {
+    width: 2px;
+    height: 8px;
+    top: 6px;
+    left: 100%;
+}
+
+.typewriter .slide:after {
+    left: 94px;
+    top: 3px;
+    height: 14px;
+    width: 6px;
+    border-radius: 3px;
+}
+
+.typewriter .slide i {
+    display: block;
+    position: absolute;
+    right: 100%;
+    width: 6px;
+    height: 4px;
+    top: 4px;
+    background: var(--key);
+}
+
+.typewriter .paper {
+    position: absolute;
+    left: 24px;
+    top: -26px;
+    width: 40px;
+    height: 46px;
+    border-radius: 5px;
+    background: var(--paper);
+    transform: translateY(46px);
+    animation: paper 1.5s linear infinite;
+}
+
+.typewriter .paper:before {
+    content: "";
+    position: absolute;
+    left: 6px;
+    right: 6px;
+    top: 7px;
+    border-radius: 2px;
+    height: 4px;
+    transform: scaleY(0.8);
+    background: var(--text);
+    box-shadow: 0 12px 0 var(--text), 0 24px 0 var(--text), 0 36px 0 var(--text);
+}
+
+.typewriter .keyboard {
+    width: 120px;
+    height: 56px;
+    margin-top: -10px;
+    z-index: 1;
+    position: relative;
+}
+
+.typewriter .keyboard:before,
+.typewriter .keyboard:after {
+    content: "";
+    position: absolute;
+}
+
+.typewriter .keyboard:before {
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 7px;
+    background: linear-gradient(135deg, var(--blue), var(--blue-dark));
+    transform: perspective(10px) rotateX(2deg);
+    transform-origin: 50% 100%;
+}
+
+.typewriter .keyboard:after {
+    left: 2px;
+    top: 25px;
+    width: 11px;
+    height: 4px;
+    border-radius: 2px;
+    box-shadow: 15px 0 0 var(--key), 30px 0 0 var(--key), 45px 0 0 var(--key), 60px 0 0 var(--key), 75px 0 0 var(--key), 90px 0 0 var(--key), 22px 10px 0 var(--key), 37px 10px 0 var(--key), 52px 10px 0 var(--key), 60px 10px 0 var(--key), 68px 10px 0 var(--key), 83px 10px 0 var(--key);
+    animation: keyboard 0.5s linear infinite alternate;
+}
+
+@keyframes slide {
+    0% { transform: translateX(14px); }
+    100% { transform: translateX(0px); }
+}
+
+@keyframes paper {
+    0% { transform: translateY(46px); }
+    100% { transform: translateY(0); }
+}
+
+@keyframes keyboard {
+    0% {
+        box-shadow: 15px 0 0 var(--key), 30px 0 0 var(--key), 45px 0 0 var(--key), 60px 0 0 var(--key), 75px 0 0 var(--key), 90px 0 0 var(--key), 22px 10px 0 var(--key), 37px 10px 0 var(--key), 52px 10px 0 var(--key), 60px 10px 0 var(--key), 68px 10px 0 var(--key), 83px 10px 0 var(--key);
+    }
+    100% {
+        box-shadow: 15px -2px 0 var(--key), 30px -2px 0 var(--key), 45px -2px 0 var(--key), 60px -2px 0 var(--key), 75px -2px 0 var(--key), 90px -2px 0 var(--key), 22px 8px 0 var(--key), 37px 8px 0 var(--key), 52px 8px 0 var(--key), 60px 8px 0 var(--key), 68px 8px 0 var(--key), 83px 8px 0 var(--key);
+    }
+}
+
+#chipp-chat-widget {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    max-width: 400px;
+    width: 100%;
+}
+
+#chipp-chat-widget iframe {
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    background: white;
+}
+
+@media (max-width: 768px) {
+    #chipp-chat-widget {
+        bottom: 10px;
+        right: 10px;
+        max-width: calc(100% - 20px);
+    }
+}
+
+.new-transcription {
+    margin-top: 2rem;
+}
+
+.new-transcription-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #4a5568;
+    color: white;
+    padding: 0.8rem 1.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    min-width: 200px;
+    justify-content: center;
+}
+
+.new-transcription-button:hover {
+    background: #2d3748;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.loader {
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #8a1d22;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.info-text {
+    margin-top: 10px;
+    padding: 8px 12px;
+    background-color: #e6f7ff;
+    border-left: 4px solid #1890ff;
+    border-radius: 4px;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.status-container {
+    text-align: center;
+    padding: 2rem;
+    margin: 2rem 0;
+    background: #f7fafc;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    animation: fadeIn 0.5s ease;
+}
+
+.download-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #8a1d22;
+    color: white;
+    padding: 0.8rem 1.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    min-width: 150px;
+    justify-content: center;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.download-btn:hover {
+    background: #da1c24;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.file-upload {
+    border: 2px dashed #e2e8f0;
+    border-radius: 10px;
+    padding: 2rem;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.file-upload.has-file {
+    border-color: #8a1d22;
+    background: #fff6f6;
+}
+
+.file-upload:hover {
+    border-color: #8a1d22;
+    background: #fff6f6;
+}
+
+.file-upload input[type="file"] {
+    display: none;
+}
+
+.file-upload label {
+    cursor: pointer;
+    display: block;
+    padding: 15px;
+    font-size: 1.1rem;
+    color: #4a5568;
+    transition: color 0.3s ease;
+}
+
+.file-upload label:hover {
+    color: #8a1d22;
+}
+
+.selected-file-name {
+    margin-top: 10px;
+    font-size: 0.9rem;
+    color: #718096;
+    min-height: 20px;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+}
+
+.file-selected {
+    color: #8a1d22;
+    font-weight: 500;
+}
+
+.submit-btn {
+    width: 100%;
+    background: #8a1d22;
+    color: white;
+    border: none;
+    padding: 1rem;
+    border-radius: 10px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.submit-btn:hover {
+    background: #da1c24;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+#processingContainer {
+    margin-top: 2rem;
+    animation: fadeIn 0.5s ease;
+}
+
+.error-text {
+    color: #e53e3e;
+    font-weight: 500;
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+}
+
+.error-detail {
+    color: #718096;
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 10px;
+    background-color: #fff5f5;
+    border-radius: 5px;
+    border-left: 3px solid #e53e3e;
+}
+
+#errorContainer {
+    text-align: center;
+    padding: 2rem;
+    margin: 2rem 0;
+    background: #f7fafc;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    animation: fadeIn 0.5s ease;
+}

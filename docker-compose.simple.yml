@@ -1,0 +1,122 @@
+# Versão simplificada sem Nginx - apenas aplicação, worker e Redis
+services:
+  chatbot-assistant:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: chatbot-assistant-new
+    ports:
+      - "5359:5359"
+    volumes:
+      - sqlite_data:/app/app/data:rw,Z
+      - logs_data:/app/logs:rw,Z
+      - uploads_data:/app/app/static/uploads:rw,Z
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - FLASK_SECRET_KEY=${FLASK_SECRET_KEY:-$(openssl rand -hex 32)}
+      - PORT=5359
+      - WORKERS=4
+      - REDIS_URL=redis://redis:6379/0
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - IS_DOCKER=true
+      - PYTHONPATH=/app
+      - SQLITE_SECURE=true
+      - DB_BACKUP_ENABLED=true
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - chatbot-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5359/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+  # Worker Celery para processamento assíncrono
+  celery-worker:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: chatbot-celery-worker-new
+    command: ["celery", "-A", "app.tasks.celery_app", "worker", "--loglevel=info", "--concurrency=2"]
+    volumes:
+      - sqlite_data:/app/app/data
+      - logs_data:/app/logs
+      - uploads_data:/app/app/static/uploads
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - REDIS_URL=redis://redis:6379/0
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - IS_DOCKER=true
+      - PYTHONPATH=/app
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - chatbot-network
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # Redis para mensageria e cache
+  redis:
+    image: redis:7-alpine
+    container_name: chatbot-redis-new
+    ports:
+      - "127.0.0.1:6380:6379"  # Mudança da porta externa para 6380
+    volumes:
+      - redis_data:/data
+    command: >
+      redis-server 
+      --appendonly yes 
+      --maxmemory 256mb 
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+    restart: unless-stopped
+    networks:
+      - chatbot-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "2"
+
+networks:
+  chatbot-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.23.0.0/16
+
+volumes:
+  sqlite_data:
+    driver: local
+  redis_data:
+    driver: local
+  logs_data:
+    driver: local
+  uploads_data:
+    driver: local 

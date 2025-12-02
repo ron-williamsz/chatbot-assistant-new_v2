@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Iframe</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #333;
+        }
+        .iframe-container {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #ccc;
+            margin-top: 20px;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .control-panel {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+        }
+        input, button {
+            padding: 8px;
+            margin: 5px 0;
+        }
+        input {
+            width: 300px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .log {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+            font-family: monospace;
+        }
+        .success {
+            color: green;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Teste de Iframe - Transcrição de Áudio</h1>
+        
+        <div class="control-panel">
+            <h3>Configurações</h3>
+            <div>
+                <label for="apiKey">API Key:</label>
+                <input type="text" id="apiKey" value="zangari_solucoes_2024">
+            </div>
+            <div>
+                <label for="urlBase">URL Base:</label>
+                <input type="text" id="urlBase" value="http://localhost:3023">
+            </div>
+            <div>
+                <label>Método de Autenticação:</label>
+                <select id="authMethod">
+                    <option value="url">Parâmetro URL</option>
+                    <option value="header">Cabeçalho X-API-Key</option>
+                    <option value="bearer">Cabeçalho Bearer</option>
+                </select>
+            </div>
+            <button onclick="loadIframe()">Recarregar Iframe</button>
+            <button onclick="testDirectApi()">Testar API Diretamente</button>
+        </div>
+        
+        <div class="iframe-container">
+            <iframe id="transcriptionFrame" src="about:blank"></iframe>
+        </div>
+        
+        <div class="log">
+            <h3>Log de Requisições</h3>
+            <div id="logContainer"></div>
+        </div>
+    </div>
+    
+    <script>
+        // Função para adicionar entradas ao log
+        function logMessage(message, isError = false) {
+            const logContainer = document.getElementById('logContainer');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${isError ? 'error' : 'success'}`;
+            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logContainer.prepend(logEntry);
+        }
+        
+        // Função para carregar o iframe com base nas configurações
+        function loadIframe() {
+            const apiKey = document.getElementById('apiKey').value;
+            const urlBase = document.getElementById('urlBase').value;
+            const authMethod = document.getElementById('authMethod').value;
+            const iframe = document.getElementById('transcriptionFrame');
+            
+            let url = urlBase;
+            
+            if (authMethod === 'url') {
+                url += `/?api_key=${apiKey}`;
+                logMessage(`Carregando iframe com API key na URL: ${url}`);
+            } else {
+                logMessage(`Carregando iframe com URL base: ${url}`);
+                logMessage(`A autenticação será feita via JavaScript no iframe usando ${authMethod === 'header' ? 'X-API-Key' : 'Bearer'}`);
+            }
+            
+            iframe.src = url;
+            
+            // Se a autenticação for por cabeçalho, precisamos comunicar com o iframe
+            if (authMethod !== 'url') {
+                // Esperar o iframe carregar
+                iframe.onload = function() {
+                    try {
+                        // Tentar enviar mensagem para o iframe
+                        iframe.contentWindow.postMessage({
+                            type: 'setApiKey',
+                            apiKey: apiKey,
+                            method: authMethod
+                        }, '*');
+                        logMessage('Mensagem postMessage enviada para o iframe');
+                    } catch (error) {
+                        logMessage(`Erro ao comunicar com iframe: ${error.message}`, true);
+                    }
+                };
+            }
+        }
+        
+        // Função para testar a API diretamente
+        function testDirectApi() {
+            const apiKey = document.getElementById('apiKey').value;
+            const urlBase = document.getElementById('urlBase').value;
+            const authMethod = document.getElementById('authMethod').value;
+            
+            let url = urlBase;
+            if (authMethod === 'url') {
+                url += `/?api_key=${apiKey}`;
+            }
+            
+            const headers = new Headers();
+            if (authMethod === 'header') {
+                headers.append('X-API-Key', apiKey);
+            } else if (authMethod === 'bearer') {
+                headers.append('Authorization', `Bearer ${apiKey}`);
+            }
+            
+            logMessage(`Testando API diretamente: ${url}`);
+            logMessage(`Método: ${authMethod}, Headers: ${JSON.stringify(Object.fromEntries(headers.entries()))}`);
+            
+            fetch(url, { headers })
+                .then(response => {
+                    if (response.ok) {
+                        logMessage(`Resposta da API: ${response.status} ${response.statusText}`);
+                        return response.text();
+                    } else {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                })
+                .then(text => {
+                    // Verificar se é JSON
+                    try {
+                        const json = JSON.parse(text);
+                        logMessage(`Resposta completa (JSON): ${JSON.stringify(json)}`);
+                    } catch {
+                        // Se não for JSON, mostrar os primeiros 100 caracteres
+                        logMessage(`Resposta HTML recebida (primeiros 100 caracteres): ${text.substring(0, 100)}...`);
+                    }
+                })
+                .catch(error => {
+                    logMessage(`Erro na requisição: ${error.message}`, true);
+                });
+        }
+        
+        // Carregar o iframe imediatamente
+        window.onload = loadIframe;
+    </script>
+</body>
+</html> 

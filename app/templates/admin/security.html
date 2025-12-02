@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Segurança do Banco de Dados - Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen">
+        <!-- Navigation -->
+        <nav class="bg-white border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <h1 class="text-xl font-semibold text-gray-900">
+                            <i class="fas fa-shield-alt mr-2 text-blue-600"></i>
+                            Segurança do Banco de Dados
+                        </h1>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <a href="/admin/assistants" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-arrow-left mr-1"></i>
+                            Voltar ao Admin
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            <!-- Status Overview -->
+            <div class="mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <!-- Security Status -->
+                    <div class="bg-white overflow-hidden shadow rounded-lg">
+                        <div class="p-5">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <i id="security-icon" class="fas fa-shield-alt text-2xl text-gray-400"></i>
+                                </div>
+                                <div class="ml-5 w-0 flex-1">
+                                    <dl>
+                                        <dt class="text-sm font-medium text-gray-500 truncate">Status de Segurança</dt>
+                                        <dd id="security-status" class="text-lg font-medium text-gray-900">Carregando...</dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Integrity Check -->
+                    <div class="bg-white overflow-hidden shadow rounded-lg">
+                        <div class="p-5">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <i id="integrity-icon" class="fas fa-check-circle text-2xl text-gray-400"></i>
+                                </div>
+                                <div class="ml-5 w-0 flex-1">
+                                    <dl>
+                                        <dt class="text-sm font-medium text-gray-500 truncate">Integridade</dt>
+                                        <dd id="integrity-status" class="text-lg font-medium text-gray-900">Carregando...</dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Backup Count -->
+                    <div class="bg-white overflow-hidden shadow rounded-lg">
+                        <div class="p-5">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-database text-2xl text-blue-600"></i>
+                                </div>
+                                <div class="ml-5 w-0 flex-1">
+                                    <dl>
+                                        <dt class="text-sm font-medium text-gray-500 truncate">Backups</dt>
+                                        <dd id="backup-count" class="text-lg font-medium text-gray-900">0</dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Database Size -->
+                    <div class="bg-white overflow-hidden shadow rounded-lg">
+                        <div class="p-5">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-hdd text-2xl text-purple-600"></i>
+                                </div>
+                                <div class="ml-5 w-0 flex-1">
+                                    <dl>
+                                        <dt class="text-sm font-medium text-gray-500 truncate">Tamanho do BD</dt>
+                                        <dd id="db-size" class="text-lg font-medium text-gray-900">-</dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions Panel -->
+            <div class="bg-white shadow rounded-lg mb-8">
+                <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+                        <i class="fas fa-tools mr-2"></i>
+                        Ações de Segurança
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Create Backup -->
+                        <button onclick="createBackup()" 
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center justify-center transition-colors">
+                            <i class="fas fa-save mr-2"></i>
+                            Criar Backup
+                        </button>
+
+                        <!-- Check Integrity -->
+                        <button onclick="checkIntegrity()" 
+                                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center justify-center transition-colors">
+                            <i class="fas fa-check mr-2"></i>
+                            Verificar Integridade
+                        </button>
+
+                        <!-- Optimize Database -->
+                        <button onclick="optimizeDatabase()" 
+                                class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md flex items-center justify-center transition-colors">
+                            <i class="fas fa-cogs mr-2"></i>
+                            Otimizar BD
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Configuration Panel -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Security Configuration -->
+                <div class="bg-white shadow rounded-lg">
+                    <div class="px-4 py-5 sm:p-6">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+                            <i class="fas fa-cog mr-2"></i>
+                            Configuração de Segurança
+                        </h3>
+                        <div id="security-config" class="space-y-4">
+                            <!-- Configuration will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Database Statistics -->
+                <div class="bg-white shadow rounded-lg">
+                    <div class="px-4 py-5 sm:p-6">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+                            <i class="fas fa-chart-bar mr-2"></i>
+                            Estatísticas do Banco
+                        </h3>
+                        <div id="db-stats" class="space-y-3">
+                            <!-- Stats will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Backups List -->
+            <div class="bg-white shadow rounded-lg mt-8">
+                <div class="px-4 py-5 sm:p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">
+                            <i class="fas fa-history mr-2"></i>
+                            Backups Disponíveis
+                        </h3>
+                        <button onclick="refreshBackups()" 
+                                class="text-blue-600 hover:text-blue-800 text-sm">
+                            <i class="fas fa-refresh mr-1"></i>
+                            Atualizar
+                        </button>
+                    </div>
+                    <div id="backups-list">
+                        <!-- Backups list will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loading" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3 text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100">
+                    <i class="fas fa-spinner fa-spin text-blue-600 text-xl"></i>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 mt-4">Processando...</h3>
+                <p id="loading-message" class="text-sm text-gray-500 mt-2">Aguarde...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Utility functions
+        function showLoading(message = 'Processando...') {
+            document.getElementById('loading-message').textContent = message;
+            document.getElementById('loading').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').classList.add('hidden');
+        }
+
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 z-50 p-4 rounded-md shadow-lg max-w-sm ${
+                type === 'success' ? 'bg-green-500' :
+                type === 'error' ? 'bg-red-500' :
+                type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
+            } text-white`;
+            
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas ${
+                        type === 'success' ? 'fa-check' :
+                        type === 'error' ? 'fa-times' :
+                        type === 'warning' ? 'fa-exclamation' : 'fa-info'
+                    } mr-2"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleString('pt-BR');
+        }
+
+        // Main functions
+        async function loadSecurityStatus() {
+            try {
+                const response = await fetch('/admin/api/security/status');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    updateSecurityStatus(data);
+                } else {
+                    showNotification('Erro ao carregar status de segurança: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showNotification('Erro ao conectar com o servidor', 'error');
+            }
+        }
+
+        function updateSecurityStatus(data) {
+            // Update security status
+            const securityIcon = document.getElementById('security-icon');
+            const securityStatus = document.getElementById('security-status');
+            
+            if (data.security_enabled) {
+                securityIcon.className = 'fas fa-shield-alt text-2xl text-green-600';
+                securityStatus.textContent = 'Ativo';
+                securityStatus.className = 'text-lg font-medium text-green-600';
+            } else {
+                securityIcon.className = 'fas fa-shield-alt text-2xl text-yellow-600';
+                securityStatus.textContent = 'Básico';
+                securityStatus.className = 'text-lg font-medium text-yellow-600';
+            }
+
+            // Update integrity status
+            const integrityIcon = document.getElementById('integrity-icon');
+            const integrityStatus = document.getElementById('integrity-status');
+            
+            if (data.integrity_check) {
+                integrityIcon.className = 'fas fa-check-circle text-2xl text-green-600';
+                integrityStatus.textContent = 'OK';
+                integrityStatus.className = 'text-lg font-medium text-green-600';
+            } else {
+                integrityIcon.className = 'fas fa-exclamation-circle text-2xl text-red-600';
+                integrityStatus.textContent = 'Problemas';
+                integrityStatus.className = 'text-lg font-medium text-red-600';
+            }
+
+            // Update backup count
+            document.getElementById('backup-count').textContent = data.backup_info.count;
+
+            // Update database size
+            if (data.database_stats.file_size) {
+                document.getElementById('db-size').textContent = formatBytes(data.database_stats.file_size);
+            }
+
+            // Update configuration section
+            updateConfigurationPanel(data.environment);
+
+            // Update statistics
+            updateStatisticsPanel(data.database_stats);
+        }
+
+        function updateConfigurationPanel(env) {
+            const configDiv = document.getElementById('security-config');
+            configDiv.innerHTML = `
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-medium text-gray-700">SQLITE_SECURE:</span>
+                        <span class="px-2 py-1 text-xs rounded ${
+                            env.sqlite_secure === 'true' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                        }">${env.sqlite_secure}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-medium text-gray-700">DB_BACKUP_ENABLED:</span>
+                        <span class="px-2 py-1 text-xs rounded ${
+                            env.backup_enabled === 'true' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                        }">${env.backup_enabled}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-medium text-gray-700">Chave de Criptografia:</span>
+                        <span class="px-2 py-1 text-xs rounded ${
+                            env.encryption_key_set ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                        }">${env.encryption_key_set ? 'Configurada' : 'Automática'}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateStatisticsPanel(stats) {
+            const statsDiv = document.getElementById('db-stats');
+            statsDiv.innerHTML = `
+                <div class="space-y-2">
+                    <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Tamanho do arquivo:</span>
+                        <span class="text-sm font-medium">${stats.file_size ? formatBytes(stats.file_size) : 'N/A'}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Páginas totais:</span>
+                        <span class="text-sm font-medium">${stats.page_count || 'N/A'}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Tamanho da página:</span>
+                        <span class="text-sm font-medium">${stats.page_size ? formatBytes(stats.page_size) : 'N/A'}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Páginas livres:</span>
+                        <span class="text-sm font-medium">${stats.free_pages || 'N/A'}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Número de tabelas:</span>
+                        <span class="text-sm font-medium">${stats.table_count || 'N/A'}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function createBackup() {
+            showLoading('Criando backup...');
+            try {
+                const response = await fetch('/admin/api/security/backup', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                hideLoading();
+                
+                if (response.ok) {
+                    showNotification('Backup criado com sucesso!', 'success');
+                    loadSecurityStatus();
+                    refreshBackups();
+                } else {
+                    showNotification('Erro ao criar backup: ' + data.error, 'error');
+                }
+            } catch (error) {
+                hideLoading();
+                showNotification('Erro ao conectar com o servidor', 'error');
+            }
+        }
+
+        async function checkIntegrity() {
+            showLoading('Verificando integridade...');
+            try {
+                const response = await fetch('/admin/api/security/integrity', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                hideLoading();
+                
+                if (response.ok) {
+                    showNotification(data.message, data.integrity_check ? 'success' : 'error');
+                    loadSecurityStatus();
+                } else {
+                    showNotification('Erro na verificação: ' + data.error, 'error');
+                }
+            } catch (error) {
+                hideLoading();
+                showNotification('Erro ao conectar com o servidor', 'error');
+            }
+        }
+
+        async function optimizeDatabase() {
+            showLoading('Otimizando banco de dados...');
+            try {
+                const response = await fetch('/admin/api/security/optimize', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                hideLoading();
+                
+                if (response.ok) {
+                    showNotification(data.message, data.success ? 'success' : 'error');
+                    loadSecurityStatus();
+                } else {
+                    showNotification('Erro na otimização: ' + data.error, 'error');
+                }
+            } catch (error) {
+                hideLoading();
+                showNotification('Erro ao conectar com o servidor', 'error');
+            }
+        }
+
+        async function refreshBackups() {
+            try {
+                const response = await fetch('/admin/api/security/backups');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    updateBackupsList(data.backups);
+                } else {
+                    showNotification('Erro ao carregar backups: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showNotification('Erro ao conectar com o servidor', 'error');
+            }
+        }
+
+        function updateBackupsList(backups) {
+            const backupsDiv = document.getElementById('backups-list');
+            
+            if (backups.length === 0) {
+                backupsDiv.innerHTML = `
+                    <div class="text-center py-4 text-gray-500">
+                        <i class="fas fa-database text-4xl mb-2"></i>
+                        <p>Nenhum backup disponível</p>
+                    </div>
+                `;
+                return;
+            }
+
+            backupsDiv.innerHTML = `
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Arquivo</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tamanho</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Criado em</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Integridade</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            ${backups.map(backup => `
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${backup.filename}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatBytes(backup.size)}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatDate(backup.created_at)}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 py-1 text-xs rounded ${
+                                            backup.has_integrity_check ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                                        }">
+                                            ${backup.has_integrity_check ? 'Verificado' : 'Sem verificação'}
+                                        </span>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSecurityStatus();
+            refreshBackups();
+        });
+    </script>
+</body>
+</html> 

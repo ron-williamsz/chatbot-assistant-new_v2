@@ -1,0 +1,8 @@
+tunnel: f949321d-b1e4-4f3d-973f-2ec85aa3c949
+credentials-file: C:/Users/zangari/.cloudflared/f949321d-b1e4-4f3d-973f-2ec85aa3c949.json
+ingress:
+  - hostname: assistente.zangari.com.br
+    service: http://localhost:5358
+    originRequest:
+      proxyType: http
+  - service: http_status:404

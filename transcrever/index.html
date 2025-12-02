@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transcrição de Áudio</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://storage.googleapis.com/chipp-chat-widget-assets/build/bundle.css" />
+
+    <script>
+        function updateFileName(input) {
+            const fileText = document.getElementById('fileText');
+            if (input.files && input.files[0]) {
+                const fileName = input.files[0].name;
+                fileText.innerHTML = `Arquivo selecionado: ${fileName}`;
+                fileText.style.color = '#4299e1';
+            } else {
+                fileText.innerHTML = 'Escolha um arquivo de áudio';
+                fileText.style.color = '#4a5568';
+            }
+        }
+
+        function showProcessing() {
+            document.getElementById('status').innerHTML = `
+                <div class="processing-container">
+                    <p class="processing-text">Processando seu arquivo...</p>
+                    <div class="typewriter">
+                        <div class="slide"><i></i></div>
+                        <div class="paper"></div>
+                        <div class="keyboard"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function checkTaskStatus(taskId) {
+            showProcessing();
+            
+            const statusInterval = setInterval(() => {
+                fetch(`/status/${taskId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Status da task:', data);
+                        
+                        if (data.state === 'SUCCESS') {
+                            clearInterval(statusInterval);
+                            
+                            // Verificar se result existe e tem docx
+                            if (data.result && data.result.docx) {
+                                let resultHtml = `
+                                    <div class="result-container">
+                                        <h2>Transcrição Concluída!</h2>
+                                        <div class="download-section">
+                                            <a href="#" class="download-button" onclick="downloadFile('${data.result.docx}', 'docx'); return false;">
+                                                <span class="download-icon">📄</span>
+                                                <span>Baixar DOCX</span>
+                                            </a>
+                                        </div>
+                                        <div class="new-transcription">
+                                            <a href="javascript:void(0)" onclick="reiniciarTranscricao()" class="new-transcription-button">
+                                                <span>Iniciar uma nova transcrição</span>
+                                            </a>
+                                        </div>
+                                    </div>
+                                `;
+                                
+                                document.getElementById('status').innerHTML = resultHtml;
+                            } else {
+                                // Se não existir resultado ou docx
+                                document.getElementById('status').innerHTML = `
+                                    <div class="error-container">
+                                        <p class="error-text">Houve um problema ao processar o arquivo.</p>
+                                        <div class="new-transcription">
+                                            <a href="/" class="new-transcription-button">
+                                                <span>Tentar novamente</span>
+                                            </a>
+                                        </div>
+                                    </div>
+                                `;
+                            }
+                        } else if (data.state === 'FAILURE') {
+                            clearInterval(statusInterval);
+                            document.getElementById('status').innerHTML = `
+                                <div class="error-container">
+                                    <p class="error-text">Erro no processamento:</p>
+                                    <p class="error-message">${data.error || 'Erro desconhecido'}</p>
+                                    <div class="new-transcription">
+                                        <a href="javascript:void(0)" onclick="reiniciarTranscricao()" class="new-transcription-button">
+                                            <span>Tentar novamente</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                        // Para outros estados, continua verificando
+                    })
+                    .catch(error => {
+                        console.error('Erro ao verificar status:', error);
+                        // Em caso de erro na verificação, mostra mensagem e oferece tentar novamente
+                        clearInterval(statusInterval);
+                        document.getElementById('status').innerHTML = `
+                            <div class="error-container">
+                                <p class="error-text">Erro ao verificar status da transcrição</p>
+                                <div class="new-transcription">
+                                    <a href="javascript:void(0)" onclick="reiniciarTranscricao()" class="new-transcription-button">
+                                        <span>Tentar novamente</span>
+                                    </a>
+                                </div>
+                            </div>
+                        `;
+                    });
+            }, 2000); // Verificar a cada 2 segundos
+        }
+
+        function reiniciarTranscricao() {
+            // Obter a API key
+            const apiKey = localStorage.getItem('api_key') || 'zangari_solucoes_2024';
+            
+            // Redirecionar para a página inicial com a API key
+            window.location.href = '/?api_key=' + apiKey;
+        }
+
+        function downloadFile(filename, type) {
+            // Obter a API key para incluir na URL
+            const apiKey = localStorage.getItem('api_key') || 'zangari_solucoes_2024';
+            
+            // Criar URL com a API key como parâmetro
+            let downloadUrl = '/download/' + filename + '?api_key=' + apiKey;
+            
+            // Abrir em nova aba ou redirecionar
+            window.location.href = downloadUrl;
+            return false;
+        }
+    </script>
+</head>
+<body>
+    <div class="page-container">
+        <div class="content-wrapper">
+            <header>
+                <img src="{{ url_for('static', filename='header_image.png') }}" alt="Header Image" class="header-image">
+                <h1>Serviço de Transcrição de Áudio</h1>
+                <p class="subtitle">Transforme seu áudio em texto de forma rápida e precisa</p>
+            </header>
+
+            <main class="main-content">
+                <div class="upload-section">
+                    <form method="post" enctype="multipart/form-data" onsubmit="showProcessing()">
+                        <div class="file-upload-container">
+                            <input type="file" name="file" id="file" class="file-input" required accept="audio/*" onchange="updateFileName(this)">
+                            <label for="file" class="file-label">
+                                <span class="file-icon">📁</span>
+                                <span class="file-text" id="fileText">Escolha um arquivo de áudio</span>
+                            </label>
+                        </div>
+                        <button type="submit" class="submit-button">
+                            <span class="button-text">Iniciar Transcrição</span>
+                        </button>
+                    </form>
+                </div>
+
+                <div id="status" class="status-container"></div>
+
+                {% if result %}
+                <div class="result-container">
+                    <h2>Transcrição Concluída!</h2>
+                    <div class="download-section">
+                        <a href="{{ url_for('download_file', filename=result) }}" class="download-button">
+                            <span class="download-icon">⬇️</span>
+                            <span>Baixar Arquivo</span>
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if task_id %}
+                    <script>
+                        checkTaskStatus('{{ task_id }}');
+                    </script>
+                {% endif %}
+            </main>
+        </div>
+    </div>
+</body>
+</html>

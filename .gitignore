@@ -1,0 +1,222 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
+#   However, in case of collaboration, if having platform-specific dependencies or dependencies
+#   having no cross-platform support, pipenv may install dependencies that don't work, or not
+#   install all needed dependencies.
+#Pipfile.lock
+
+# PEP 582; used by e.g. github.com/David-OConnor/pyflow
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Docker
+.dockerignore
+
+# Application specific
+app/data/assistants.db
+app/data/assistants_*.db
+app/data/backups/
+app/assistants.db
+app/*.db
+app/static/uploads/*
+!app/static/uploads/.gitkeep
+app/static/temp_audio/*
+app/static/temp_images/*
+logs/
+*.log
+
+# Executables (não precisamos no servidor)
+cloudflared.exe
+ngrok.exe
+
+# Arquivos temporários
+teste.py
+*.tmp
+*.temp
+
+# Configurações locais
+config.local.yml
+.env.local
+.env.production
+
+# Certificados SSL (se houver)
+*.pem
+*.key
+*.crt
+*.cert
+
+# Backup files
+*.bak
+*.backup
+
+# Pasta com arquivos de teste e desnecessários
+jogar_fora/
+
+# Arquivos de teste removidos
+test_*.py
+*_test.py
+test_*.json
+
+# Arquivos de debug removidos
+debug_*.py
+*_debug.py
+quick_debug.py
+diagnostico_*.py
+fix_*.py
+
+# Arquivos temporários do projeto
+cookies*.txt
+nul
+ERROR
+desktop.ini
+
+# Uploads de teste do transcrever
+transcrever/uploads/*.opus
+transcrever/uploads/*.mp3
+transcrever/uploads/*.wav
+transcrever/control/
+transcrever/celery/
+
+# Database local (usar apenas em Docker)
+database.db
+*.db-journal
+
+# Documentos redundantes
+DEPLOY-RESUMO.md
+deploy-info.txt
+docker-compose*.backup

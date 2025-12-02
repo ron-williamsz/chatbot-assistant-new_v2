@@ -1,0 +1,22 @@
+# Ignora arquivos grandes
+*.mp3
+*.wav
+*.pdf
+*.docx
+*.mov
+*.mp4
+*.avi
+*.zip
+*.rar
+*.gz
+*.tar
+*.7z
+
+# Diretório de uploads
+uploads/
+
+# Diretório de ambiente virtual
+venv/
+env/
+__pycache__/
+*.pyc 

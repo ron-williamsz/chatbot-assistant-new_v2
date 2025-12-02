@@ -1,0 +1,726 @@
+{% extends "base.html" %}
+
+{% block title %}Administração de Usuários - ZANGARI{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <!-- Logo e Navegação -->
+                <div class="flex items-center space-x-8">
+                    <div class="flex items-center space-x-3">
+                        <i class="fas fa-robot text-2xl text-primary-600"></i>
+                        <h1 class="text-xl font-semibold text-gray-900">ZANGARI Assistente</h1>
+                    </div>
+                    
+                    <!-- Tabs de navegação -->
+                    <nav class="flex space-x-1">
+                        <a href="/admin/assistants" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
+                            Assistentes
+                        </a>
+                        <a href="/admin/users" class="px-4 py-2 text-sm font-medium text-primary-600 bg-primary-50 rounded-lg">
+                            Usuários
+                        </a>
+                        <a href="/admin/wallets" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
+                            Carteiras
+                        </a>
+                        <a href="/admin/security" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
+                            <i class="fas fa-shield-alt mr-1"></i>
+                            Segurança
+                        </a>
+                    </nav>
+                </div>
+                
+                <!-- Botões de ação -->
+                <div class="flex items-center space-x-3">
+                    <a href="/chat" class="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg">
+                        <i class="fas fa-comments"></i>
+                        <span>Acessar Chat</span>
+                    </a>
+                    <a href="/dashboard" class="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg border border-gray-300">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="/auth/logout" class="flex items-center space-x-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Sair</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Page Header -->
+        <div class="md:flex md:items-center md:justify-between mb-8">
+            <div class="flex-1 min-w-0">
+                <h2 class="text-2xl font-bold text-gray-900">Administração de Usuários</h2>
+                <p class="mt-1 text-sm text-gray-500">Gerencie os usuários do sistema</p>
+            </div>
+            <div class="mt-4 flex md:mt-0 md:ml-4">
+                <button onclick="openCreateUserModal()" class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    <i class="fas fa-user-plus mr-2"></i>
+                    Criar Usuário
+            </button>
+            </div>
+        </div>
+
+        <!-- Users Table -->
+        <div class="bg-white shadow-sm rounded-lg overflow-hidden">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuário</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Carteira</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Último Login</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                            </tr>
+                        </thead>
+                <tbody id="usersList" class="bg-white divide-y divide-gray-200">
+                    <!-- Usuários serão carregados aqui -->
+                        </tbody>
+                    </table>
+                </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="hidden">
+            <div class="flex flex-col items-center justify-center py-12">
+                <svg class="animate-spin h-12 w-12 text-primary-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <p class="text-gray-500">Carregando usuários...</p>
+            </div>
+        </div>
+    </main>
+                    </div>
+
+<!-- Modal Criar/Editar Usuário -->
+<div id="userModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+    <div class="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-xl bg-white">
+        <div class="flex justify-between items-center mb-6">
+            <h3 id="modalTitle" class="text-xl font-semibold text-gray-900">Criar Novo Usuário</h3>
+            <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+                            </div>
+        
+        <form id="userForm" class="space-y-6">
+            <input type="hidden" id="userId">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Nome Completo</label>
+                    <input type="text" id="userFullName" required
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Nome de Usuário</label>
+                    <input type="text" id="userUsername" required
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input type="email" id="userEmail" required
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Senha</label>
+                    <div class="relative">
+                        <input type="password" id="userPassword"
+                               class="w-full px-4 py-2 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                               placeholder="Deixe em branco para não alterar">
+                        <button type="button" id="toggleUserPassword" class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                            <i class="fas fa-eye text-gray-400 hover:text-gray-600" id="eyeIconUser"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Usuário</label>
+                    <select id="userIsAdmin" onchange="toggleWalletField()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                        <option value="0">Usuário Comum</option>
+                        <option value="1">Administrador</option>
+                    </select>
+        </div>
+
+                <div id="walletField">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Carteira</label>
+                    <select id="userWallet" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                        <option value="">Nenhuma carteira</option>
+                        <!-- Opções serão carregadas dinamicamente -->
+                    </select>
+                </div>
+            </div>
+
+            <!-- Seção de Token de Integração (apenas para edição) -->
+            <div id="integrationTokenSection" class="hidden">
+                <hr class="my-6">
+                <h4 class="text-lg font-medium text-gray-900 mb-4">
+                    <i class="fas fa-link mr-2"></i>Token de Integração
+                </h4>
+                <p class="text-sm text-gray-600 mb-4">
+                    Configure um token para permitir que este usuário acesse automaticamente o chatbot a partir de outros sistemas (como Soluções Zangari).
+                </p>
+                
+                <div id="tokenInfo" class="mb-4">
+                    <!-- Será preenchido via JavaScript -->
+                </div>
+                
+                <div class="flex space-x-3">
+                    <button type="button" id="generateTokenBtn" onclick="generateIntegrationToken()" 
+                            class="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg">
+                        <i class="fas fa-key mr-1"></i> Gerar Token
+                    </button>
+                    <button type="button" id="revokeTokenBtn" onclick="revokeIntegrationToken()" 
+                            class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg hidden">
+                        <i class="fas fa-trash mr-1"></i> Revogar Token
+                    </button>
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-3 pt-4 border-t">
+                <button type="button" onclick="closeModal()"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg">
+                    Cancelar
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg">
+                    <span id="submitButtonText">Criar Usuário</span>
+                </button>
+        </div>
+        </form>
+    </div>
+</div>
+
+<!-- Alerts/Toasts -->
+<div id="alertContainer" class="fixed top-4 right-4 z-50 space-y-2">
+    <!-- Alerts serão adicionados aqui dinamicamente -->
+    </div>
+
+    <script>
+    let allUsers = [];
+    let allWallets = [];
+
+    // Função para mostrar alerta
+    function showAlert(message, type = 'success') {
+        const alertDiv = document.createElement('div');
+        const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
+        const icon = type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle';
+        
+        alertDiv.className = `${bgColor} text-white px-6 py-4 rounded-lg shadow-lg flex items-center space-x-3`;
+        alertDiv.innerHTML = `
+            <i class="fas fa-${icon}"></i>
+            <span>${message}</span>
+        `;
+        
+        document.getElementById('alertContainer').appendChild(alertDiv);
+        
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 5000);
+    }
+
+    // Função para formatar data
+    function formatDate(timestamp) {
+        if (!timestamp) return 'Nunca';
+        const date = new Date(timestamp * 1000);
+        return date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
+    }
+
+    // Função para renderizar usuários
+    function renderUsers(users) {
+        const container = document.getElementById('usersList');
+        container.innerHTML = '';
+        
+        if (users.length === 0) {
+            container.innerHTML = `
+                <tr>
+                    <td colspan="7" class="px-6 py-4 text-center text-gray-500">
+                        Nenhum usuário encontrado
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        users.forEach(user => {
+            const row = document.createElement('tr');
+            row.className = 'hover:bg-gray-50';
+            
+            const tipoUsuario = user.is_admin ? 'Administrador' : 'Usuário';
+            const tipoClass = user.is_admin ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800';
+            
+                    row.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm font-medium text-gray-900">${user.full_name || 'Sem nome'}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm text-gray-900">${user.username}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm text-gray-500">${user.email || 'Sem email'}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${tipoClass}">
+                        ${tipoUsuario}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    ${user.is_admin ? 'N/A' : getWalletName(user.carteira)}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    ${formatDate(user.last_login)}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button onclick="editUser(${user.id})" class="text-primary-600 hover:text-primary-900 mr-3">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                    <button onclick="deleteUser(${user.id})" class="text-red-600 hover:text-red-900">
+                        <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    `;
+            
+            container.appendChild(row);
+        });
+    }
+
+    // Carregar usuários
+    async function loadUsers() {
+        document.getElementById('loadingState').classList.remove('hidden');
+        document.getElementById('usersList').innerHTML = '';
+        
+        try {
+            const response = await fetch('/admin/api/users');
+                const data = await response.json();
+
+            if (data.users) {
+                allUsers = data.users;
+                renderUsers(allUsers);
+            }
+        } catch (error) {
+            showAlert('Erro ao carregar usuários', 'error');
+        } finally {
+            document.getElementById('loadingState').classList.add('hidden');
+        }
+    }
+
+    // Abrir modal de criação
+    function openCreateUserModal() {
+        document.getElementById('modalTitle').textContent = 'Criar Novo Usuário';
+        document.getElementById('submitButtonText').textContent = 'Criar Usuário';
+        document.getElementById('userForm').reset();
+        document.getElementById('userId').value = '';
+        document.getElementById('userPassword').required = true;
+        
+        // Garantir que o campo carteira apareça por padrão (usuário comum)
+        toggleWalletField();
+        
+        // Esconder seção de token de integração (só para edição)
+        document.getElementById('integrationTokenSection').classList.add('hidden');
+        
+        document.getElementById('userModal').classList.remove('hidden');
+    }
+
+    // Fechar modal
+    function closeModal() {
+        document.getElementById('userModal').classList.add('hidden');
+    }
+
+    // Editar usuário
+    function editUser(userId) {
+        const user = allUsers.find(u => u.id === userId);
+        
+        if (!user) return;
+        
+        document.getElementById('modalTitle').textContent = 'Editar Usuário';
+        document.getElementById('submitButtonText').textContent = 'Salvar Alterações';
+        document.getElementById('userId').value = user.id;
+        document.getElementById('userFullName').value = user.full_name || '';
+        document.getElementById('userUsername').value = user.username;
+        document.getElementById('userEmail').value = user.email || '';
+        document.getElementById('userPassword').value = '';
+        document.getElementById('userPassword').required = false;
+        document.getElementById('userIsAdmin').value = user.is_admin ? '1' : '0';
+        document.getElementById('userWallet').value = user.carteira || '';
+        
+        // Mostrar/ocultar campo carteira baseado no tipo
+        toggleWalletField();
+        
+        // Mostrar seção de token de integração para edição
+        document.getElementById('integrationTokenSection').classList.remove('hidden');
+        
+        // Carregar informações do token
+        loadUserIntegrationToken(userId);
+        
+        document.getElementById('userModal').classList.remove('hidden');
+    }
+
+    // Excluir usuário
+    async function deleteUser(userId) {
+            if (!confirm('Tem certeza que deseja excluir este usuário?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/admin/api/users/${userId}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                showAlert('Usuário excluído com sucesso!', 'success');
+                    loadUsers();
+                } else {
+                showAlert(data.error || 'Erro ao excluir usuário', 'error');
+                }
+            } catch (error) {
+            showAlert('Erro ao excluir usuário', 'error');
+        }
+    }
+
+    // Submeter formulário
+    document.getElementById('userForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const userId = document.getElementById('userId').value;
+        const isEdit = !!userId;
+        
+        const formData = {
+            full_name: document.getElementById('userFullName').value,
+            username: document.getElementById('userUsername').value,
+            email: document.getElementById('userEmail').value,
+            is_admin: parseInt(document.getElementById('userIsAdmin').value)
+        };
+        
+        const password = document.getElementById('userPassword').value;
+        if (password) {
+            formData.password = password;
+        }
+        
+        // Adicionar carteira apenas se não for administrador
+        const isAdmin = parseInt(document.getElementById('userIsAdmin').value);
+        if (!isAdmin) {
+            const walletId = document.getElementById('userWallet').value;
+            if (walletId) {
+                formData.wallet_id = parseInt(walletId);
+            } else {
+                formData.wallet_id = null;
+            }
+        }
+        
+        try {
+            const url = isEdit 
+                ? `/admin/api/users/${userId}`
+                : '/admin/api/users';
+                
+            const response = await fetch(url, {
+                method: isEdit ? 'PUT' : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                showAlert(isEdit ? 'Usuário atualizado com sucesso!' : 'Usuário criado com sucesso!', 'success');
+                closeModal();
+                loadUsers();
+            } else {
+                showAlert(data.error || 'Erro ao salvar usuário', 'error');
+            }
+        } catch (error) {
+            showAlert('Erro ao salvar usuário', 'error');
+        }
+    });
+
+    // Carregar carteiras
+    async function loadWallets() {
+        try {
+            const response = await fetch('/admin/api/wallets');
+            const data = await response.json();
+            
+            if (data.wallets) {
+                allWallets = data.wallets;
+                populateWalletSelect();
+            }
+        } catch (error) {
+            console.error('Erro ao carregar carteiras:', error);
+        }
+    }
+
+    // Preencher select de carteiras
+    function populateWalletSelect() {
+        const select = document.getElementById('userWallet');
+        
+        // Limpar opções existentes (exceto a primeira)
+        while (select.children.length > 1) {
+            select.removeChild(select.lastChild);
+        }
+        
+        // Adicionar carteiras
+        allWallets.forEach(wallet => {
+            const option = document.createElement('option');
+            option.value = wallet.id;
+            option.textContent = wallet.name;
+            select.appendChild(option);
+        });
+    }
+
+    // Função para obter nome da carteira
+    function getWalletName(walletId) {
+        if (!walletId) return 'Nenhuma';
+        const wallet = allWallets.find(w => w.id === walletId);
+        return wallet ? wallet.name : 'Carteira não encontrada';
+    }
+
+    // ==================== FUNÇÕES PARA TOKENS DE INTEGRAÇÃO ====================
+
+    async function loadUserIntegrationToken(userId) {
+        try {
+            const response = await fetch(`/admin/api/users/${userId}/integration-token`);
+            const data = await response.json();
+            
+            const tokenInfoDiv = document.getElementById('tokenInfo');
+            const generateBtn = document.getElementById('generateTokenBtn');
+            const revokeBtn = document.getElementById('revokeTokenBtn');
+            
+            if (data.has_token) {
+                tokenInfoDiv.innerHTML = `
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-check-circle text-green-600 mr-2"></i>
+                            <h6 class="text-green-800 font-medium">Token de Integração Configurado</h6>
+                        </div>
+                        <div class="mt-2 text-sm text-green-700">
+                            <p><strong>Token:</strong> <code class="bg-green-100 px-2 py-1 rounded">${data.token_preview}</code></p>
+                            <p><strong>Criado em:</strong> ${formatDate(data.created_at)}</p>
+                            ${data.last_used ? `<p><strong>Último uso:</strong> ${formatDate(data.last_used)}</p>` : '<p><strong>Último uso:</strong> Nunca</p>'}
+                            ${data.description ? `<p><strong>Descrição:</strong> ${data.description}</p>` : ''}
+                        </div>
+                    </div>
+                `;
+                generateBtn.innerHTML = '<i class="fas fa-sync mr-1"></i> Gerar Novo Token';
+                revokeBtn.classList.remove('hidden');
+            } else {
+                tokenInfoDiv.innerHTML = `
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-exclamation-triangle text-yellow-600 mr-2"></i>
+                            <h6 class="text-yellow-800 font-medium">Nenhum Token Configurado</h6>
+                        </div>
+                        <p class="mt-2 text-sm text-yellow-700">
+                            Este usuário não possui um token de integração. Gere um para permitir acesso automático a partir de outros sistemas.
+                        </p>
+                    </div>
+                `;
+                generateBtn.innerHTML = '<i class="fas fa-key mr-1"></i> Gerar Token';
+                revokeBtn.classList.add('hidden');
+            }
+        } catch (error) {
+            console.error('Erro ao carregar token:', error);
+            document.getElementById('tokenInfo').innerHTML = `
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <div class="flex items-center">
+                        <i class="fas fa-exclamation-circle text-red-600 mr-2"></i>
+                        <span class="text-red-800">Erro ao carregar informações do token de integração.</span>
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    async function generateIntegrationToken() {
+        const userId = document.getElementById('userId').value;
+        if (!userId) return;
+
+        if (!confirm('Isso irá gerar um novo token e invalidar o anterior (se existir). Deseja continuar?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/admin/api/users/${userId}/integration-token`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    description: 'Token gerado pelo administrador via interface web'
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                // Mostrar modal com o token
+                showTokenModal(data.token, data.instructions);
+                
+                // Recarregar informações do token
+                loadUserIntegrationToken(userId);
+            } else {
+                showAlert('Erro ao gerar token: ' + data.error, 'error');
+            }
+        } catch (error) {
+            console.error('Erro ao gerar token:', error);
+            showAlert('Erro ao conectar ao servidor', 'error');
+        }
+    }
+
+    async function revokeIntegrationToken() {
+        const userId = document.getElementById('userId').value;
+        if (!userId) return;
+
+        if (!confirm('Tem certeza que deseja revogar o token de integração? Isso irá invalidar o acesso automático de outros sistemas.')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/admin/api/users/${userId}/integration-token`, {
+                method: 'DELETE'
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                showAlert('Token revogado com sucesso!', 'success');
+                loadUserIntegrationToken(userId);
+            } else {
+                showAlert('Erro ao revogar token: ' + data.error, 'error');
+            }
+        } catch (error) {
+            console.error('Erro ao revogar token:', error);
+            showAlert('Erro ao conectar ao servidor', 'error');
+        }
+    }
+
+    function showTokenModal(token, instructions) {
+        const modalHtml = `
+            <div class="fixed inset-0 bg-gray-600 bg-opacity-75 z-50 flex items-center justify-center">
+                <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg mx-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-medium text-gray-900">Token de Integração Gerado</h3>
+                        <button onclick="closeTokenModal()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-check-circle text-green-600 mr-2"></i>
+                            <span class="text-green-800 font-medium">Token gerado com sucesso!</span>
+                        </div>
+                        <p class="text-sm text-green-700">${instructions}</p>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Token de Integração:</label>
+                        <div class="flex">
+                            <input type="text" id="generatedToken" value="${token}" readonly 
+                                   class="flex-1 px-3 py-2 border border-gray-300 rounded-l-lg bg-gray-50 text-sm">
+                            <button onclick="copyToken()" 
+                                    class="px-4 py-2 bg-primary-600 text-white rounded-r-lg hover:bg-primary-700">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                        <div class="flex items-start">
+                            <i class="fas fa-exclamation-triangle text-yellow-600 mr-2 mt-0.5"></i>
+                            <div class="text-sm text-yellow-800">
+                                <strong>Importante:</strong> Guarde este token em local seguro. Ele não será mostrado novamente por questões de segurança.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end">
+                        <button onclick="closeTokenModal()" 
+                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg">
+                            Fechar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+
+    function closeTokenModal() {
+        const modal = document.querySelector('.fixed.inset-0.bg-gray-600');
+        if (modal) {
+            modal.remove();
+        }
+    }
+
+    function copyToken() {
+        const tokenField = document.getElementById('generatedToken');
+        tokenField.select();
+        document.execCommand('copy');
+        
+        // Feedback visual
+        const copyBtn = event.target.closest('button');
+        const originalHtml = copyBtn.innerHTML;
+        copyBtn.innerHTML = '<i class="fas fa-check"></i>';
+        copyBtn.classList.remove('bg-primary-600', 'hover:bg-primary-700');
+        copyBtn.classList.add('bg-green-600');
+        
+        setTimeout(() => {
+            copyBtn.innerHTML = originalHtml;
+            copyBtn.classList.remove('bg-green-600');
+            copyBtn.classList.add('bg-primary-600', 'hover:bg-primary-700');
+        }, 2000);
+        
+        showAlert('Token copiado para a área de transferência!', 'success');
+    }
+
+    // Carregar usuários ao iniciar
+    document.addEventListener('DOMContentLoaded', async function() {
+        // Carregar carteiras primeiro e aguardar
+        await loadWallets();
+        // Depois carregar usuários
+        await loadUsers();
+        
+        // Funcionalidade para mostrar/ocultar senha
+        const toggleUserPassword = document.getElementById('toggleUserPassword');
+        const userPasswordField = document.getElementById('userPassword');
+        const eyeIconUser = document.getElementById('eyeIconUser');
+
+        toggleUserPassword.addEventListener('click', function() {
+            const type = userPasswordField.getAttribute('type') === 'password' ? 'text' : 'password';
+            userPasswordField.setAttribute('type', type);
+            
+            // Alternar ícone
+            if (type === 'text') {
+                eyeIconUser.classList.remove('fa-eye');
+                eyeIconUser.classList.add('fa-eye-slash');
+            } else {
+                eyeIconUser.classList.remove('fa-eye-slash');
+                eyeIconUser.classList.add('fa-eye');
+            }
+        });
+    });
+
+    function toggleWalletField() {
+        const isAdmin = document.getElementById('userIsAdmin').value === '1';
+        const walletField = document.getElementById('walletField');
+        
+        if (isAdmin) {
+            walletField.style.display = 'none';
+        } else {
+            walletField.style.display = 'block';
+        }
+    }
+    </script>
+{% endblock %} 

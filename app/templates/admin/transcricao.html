@@ -1,0 +1,512 @@
+{% extends "base.html" %}
+
+{% block title %}Transcrição de Áudio - ZANGARI{% endblock %}
+
+{% block extra_head %}
+<style>
+    .upload-area {
+        border: 2px dashed #cbd5e1;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+    
+    .upload-area.dragover {
+        border-color: #3b82f6;
+        background-color: #eff6ff;
+    }
+    
+    .progress-bar {
+        transition: width 0.3s ease;
+    }
+    
+    .status-card {
+        animation: fadeInUp 0.5s ease-out;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .audio-visualization {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <!-- Logo e Navegação -->
+                <div class="flex items-center space-x-8">
+                    <div class="flex items-center space-x-3">
+                        <i class="fas fa-robot text-2xl text-primary-600"></i>
+                        <h1 class="text-xl font-semibold text-gray-900">ZANGARI Assistente</h1>
+                    </div>
+                    
+                    <!-- Tabs de navegação - só para admin -->
+                    {% if user.tipo == 'administrador' or user.is_admin %}
+                    <nav class="flex space-x-1">
+                        <a href="/admin/assistants" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
+                            Assistentes
+                        </a>
+                        <a href="/admin/users" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
+                            Usuários
+                        </a>
+                        <a href="/admin/wallets" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
+                            Carteiras
+                        </a>
+                        <a href="/documentos" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg flex items-center">
+                            <i class="fas fa-file-alt mr-2"></i>
+                            Documentos
+                        </a>
+                        <a href="/admin/transcricao" class="px-4 py-2 text-sm font-medium text-primary-600 bg-primary-50 rounded-lg flex items-center">
+                            <i class="fas fa-microphone mr-2"></i>
+                            Transcrição
+                        </a>
+                        <a href="/admin/security" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg flex items-center">
+                            <i class="fas fa-shield-alt mr-2"></i>
+                            Segurança
+                        </a>
+                    </nav>
+                    {% endif %}
+                </div>
+                
+                <!-- Botões de ação -->
+                <div class="flex items-center space-x-3">
+                    <a href="/chat" class="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg">
+                        <i class="fas fa-comments"></i>
+                        <span>Acessar Chat</span>
+                    </a>
+                    <a href="/dashboard" class="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg border border-gray-300">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="/auth/logout" class="flex items-center space-x-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Sair</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Título da página -->
+    <div class="bg-white border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <h1 class="text-2xl font-bold text-gray-900 flex items-center">
+                <i class="fas fa-microphone text-blue-600 mr-3"></i>
+                Transcrição de Áudio
+            </h1>
+            <p class="text-gray-600 mt-1">Converta áudios em texto com identificação de falantes</p>
+        </div>
+    </div>
+
+    <!-- Conteúdo Principal -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Área de Upload e Controles -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Card de Upload -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <i class="fas fa-upload text-blue-600 mr-2"></i>
+                        Enviar Arquivo de Áudio
+                    </h2>
+                    
+                    <div class="upload-area p-8 text-center" id="uploadArea">
+                        <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">Arraste seu arquivo aqui</h3>
+                        <p class="text-gray-500 mb-4">ou clique para selecionar</p>
+                        <input type="file" id="audioFile" class="hidden" accept="audio/*,.mp3,.wav,.m4a,.flac,.ogg,.opus,.mp4">
+                        <button onclick="document.getElementById('audioFile').click()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            Selecionar Arquivo
+                        </button>
+                        <p class="text-xs text-gray-400 mt-2">Formatos suportados: MP3, WAV, M4A, FLAC, OGG, OPUS (máx. 1GB)</p>
+                    </div>
+                </div>
+
+                <!-- Card de Configurações -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <i class="fas fa-cog text-gray-600 mr-2"></i>
+                        Configurações
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Idioma</label>
+                            <select id="language" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="pt">Português (Brasileiro)</option>
+                                <option value="en">Inglês</option>
+                                <option value="es">Espanhol</option>
+                            </select>
+                        </div>
+                        
+                        <div class="flex items-center">
+                            <input type="checkbox" id="speakerLabels" class="h-4 w-4 text-blue-600 rounded focus:ring-blue-500">
+                            <label for="speakerLabels" class="ml-2 text-sm text-gray-700">Identificar falantes</label>
+                        </div>
+                    </div>
+                    
+                    <button id="startTranscription" class="mt-4 w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                        <i class="fas fa-play mr-2"></i>
+                        Iniciar Transcrição
+                    </button>
+                </div>
+
+                <!-- Card de Status -->
+                <div id="statusCard" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hidden">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <i class="fas fa-info-circle text-blue-600 mr-2"></i>
+                        Status da Transcrição
+                    </h2>
+                    
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">Progresso:</span>
+                            <span id="progressText" class="text-sm font-medium text-gray-900">0%</span>
+                        </div>
+                        
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div id="progressBar" class="progress-bar bg-blue-600 h-2 rounded-full" style="width: 0%"></div>
+                        </div>
+                        
+                        <div id="statusMessage" class="text-sm text-gray-600">
+                            Aguardando início...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Painel Lateral -->
+            <div class="space-y-6">
+                <!-- Card de Informações -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <i class="fas fa-info text-blue-600 mr-2"></i>
+                        Como Funciona
+                    </h3>
+                    
+                    <div class="space-y-3 text-sm text-gray-600">
+                        <div class="flex items-start">
+                            <span class="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">1</span>
+                            <span>Selecione um arquivo de áudio</span>
+                        </div>
+                        <div class="flex items-start">
+                            <span class="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">2</span>
+                            <span>Configure o idioma e identificação de falantes</span>
+                        </div>
+                        <div class="flex items-start">
+                            <span class="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">3</span>
+                            <span>Aguarde o processamento (pode levar alguns minutos)</span>
+                        </div>
+                        <div class="flex items-start">
+                            <span class="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">4</span>
+                            <span>Baixe o documento Word gerado</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card de Suporte -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <i class="fas fa-question-circle text-orange-600 mr-2"></i>
+                        Dicas Importantes
+                    </h3>
+                    
+                    <div class="space-y-3 text-sm text-gray-600">
+                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded">
+                            <p class="font-medium text-yellow-800">Qualidade do Áudio</p>
+                            <p class="text-yellow-700">Para melhor identificação de falantes, use áudios com boa qualidade e pouco ruído de fundo.</p>
+                        </div>
+                        <div class="bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
+                            <p class="font-medium text-blue-800">Múltiplos Falantes</p>
+                            <p class="text-blue-700">Cada falante deve falar por pelo menos 30 segundos para identificação precisa.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resultado da Transcrição -->
+        <div id="resultSection" class="mt-8 hidden">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-900 flex items-center">
+                        <i class="fas fa-file-alt text-green-600 mr-2"></i>
+                        Resultado da Transcrição
+                    </h2>
+                    <div class="flex space-x-2">
+                        <button id="copyResult" class="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors">
+                            <i class="fas fa-copy mr-1"></i>
+                            Copiar
+                        </button>
+                        <button id="downloadResult" class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
+                            <i class="fas fa-download mr-1"></i>
+                            Download
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="transcriptionResult" class="bg-gray-50 rounded-lg p-4 max-h-96 overflow-y-auto">
+                    <!-- Resultado aparecerá aqui -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentTranscriptionId = null;
+let progressInterval = null;
+
+// Configuração da área de upload
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadArea = document.getElementById('uploadArea');
+    const audioFile = document.getElementById('audioFile');
+    const startBtn = document.getElementById('startTranscription');
+    
+    // Drag and drop
+    uploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+    
+    uploadArea.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+    });
+    
+    uploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            audioFile.files = files;
+            handleFileSelect();
+        }
+    });
+    
+    // Seleção de arquivo
+    audioFile.addEventListener('change', handleFileSelect);
+    
+    // Botão de iniciar transcrição
+    startBtn.addEventListener('click', startTranscription);
+});
+
+function handleFileSelect() {
+    const file = document.getElementById('audioFile').files[0];
+    const startBtn = document.getElementById('startTranscription');
+    
+    if (file) {
+        // Validar arquivo
+        const validTypes = [
+            'audio/mpeg',           // MP3
+            'audio/wav',            // WAV
+            'audio/mp4',            // M4A (principal)
+            'audio/x-m4a',          // M4A (alternativo)
+            'audio/mp4a-latm',      // M4A (outro tipo MIME)
+            'audio/flac',           // FLAC
+            'audio/ogg',            // OGG
+            'audio/opus'            // OPUS
+        ];
+        const maxSize = 1024 * 1024 * 1024; // 1GB
+
+        if (!validTypes.includes(file.type)) {
+            // Fallback: verificar extensão do arquivo se tipo MIME não reconhecido
+            const fileName = file.name.toLowerCase();
+            const validExtensions = ['.mp3', '.wav', '.m4a', '.mp4', '.flac', '.ogg', '.opus'];
+            const hasValidExtension = validExtensions.some(ext => fileName.endsWith(ext));
+
+            if (!hasValidExtension) {
+                alert('Formato de arquivo não suportado. Use MP3, WAV, M4A, FLAC, OGG ou OPUS.');
+                return;
+            }
+        }
+
+        if (file.size > maxSize) {
+            alert('Arquivo muito grande. Máximo 1GB.');
+            return;
+        }
+        
+        // Atualizar interface
+        document.querySelector('.upload-area h3').textContent = file.name;
+        document.querySelector('.upload-area p').textContent = `${(file.size / 1024 / 1024).toFixed(1)} MB`;
+        startBtn.disabled = false;
+        startBtn.classList.remove('disabled:bg-gray-400');
+        startBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+    }
+}
+
+async function startTranscription() {
+    const file = document.getElementById('audioFile').files[0];
+    const language = document.getElementById('language').value;
+    const speakerLabels = document.getElementById('speakerLabels').checked;
+    
+    if (!file) {
+        alert('Selecione um arquivo de áudio primeiro.');
+        return;
+    }
+    
+    // Mostrar status
+    document.getElementById('statusCard').classList.remove('hidden');
+    document.getElementById('startTranscription').disabled = true;
+    updateStatus('Enviando arquivo...', 0);
+    
+    // Criar FormData
+    const formData = new FormData();
+    formData.append('audio', file);
+    formData.append('language', language);
+    formData.append('speaker_labels', speakerLabels.toString());
+    
+    try {
+        // Atualizar progresso durante upload
+        updateStatus('Processando transcrição...', 10);
+        
+        // Fazer requisição para download direto
+        const response = await fetch('/api/transcricao/upload', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (response.ok) {
+            // Verificar se é um arquivo (content-type)
+            const contentType = response.headers.get('content-type');
+            
+            if (contentType && contentType.includes('application/vnd.openxmlformats-officedocument.wordprocessingml.document')) {
+                // É um arquivo DOCX - fazer download
+                updateStatus('Transcrição concluída! Baixando arquivo...', 100);
+                
+                // Obter o blob do arquivo
+                const blob = await response.blob();
+                
+                // Criar URL temporária e baixar
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `transcricao_${file.name}.docx`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+                
+                // Mostrar sucesso
+                showSuccessMessage(file.name);
+                
+                // Reset após sucesso
+                setTimeout(() => {
+                    resetForm();
+                }, 3000);
+                
+            } else {
+                // Resposta JSON com erro
+                const result = await response.json();
+                const errorMsg = result.error || 'Erro desconhecido na transcrição';
+                updateStatus('Erro: ' + errorMsg, 0);
+                alert('Erro na transcrição: ' + errorMsg);
+                resetForm();
+            }
+        } else {
+            // Erro HTTP
+            try {
+                const result = await response.json();
+                const errorMsg = result.error || `Erro HTTP ${response.status}`;
+                updateStatus('Erro: ' + errorMsg, 0);
+                alert('Erro na transcrição: ' + errorMsg);
+            } catch (e) {
+                updateStatus('Erro na comunicação', 0);
+                alert('Erro na comunicação com o servidor');
+            }
+            resetForm();
+        }
+    } catch (error) {
+        console.error('Erro:', error);
+        updateStatus('Erro na comunicação', 0);
+        alert('Erro ao processar arquivo: ' + error.message);
+        resetForm();
+    }
+}
+
+function showSuccessMessage(originalFileName) {
+    // Criar card de resultado/sucesso
+    const resultSection = document.getElementById('resultSection');
+    const transcriptionResult = document.getElementById('transcriptionResult');
+    
+    // Mostrar seção de resultado
+    resultSection.classList.remove('hidden');
+    
+    // Criar interface de sucesso
+    transcriptionResult.innerHTML = `
+        <div class="text-center py-8">
+            <div class="mb-4">
+                <i class="fas fa-check-circle text-green-500 text-4xl mb-2"></i>
+                <h3 class="text-lg font-semibold text-gray-900">Transcrição Concluída!</h3>
+                <p class="text-sm text-gray-600">Arquivo processado: ${originalFileName}</p>
+                <p class="text-sm text-green-600 mt-2">
+                    <i class="fas fa-download mr-1"></i>
+                    O download foi iniciado automaticamente
+                </p>
+            </div>
+            
+            <div class="bg-green-50 border border-green-200 rounded-lg p-4 mt-4">
+                <p class="text-sm text-green-700">
+                    ✅ Arquivo salvo como: <strong>transcricao_${originalFileName}.docx</strong>
+                </p>
+            </div>
+        </div>
+    `;
+    
+    // Ocultar botões padrão (copiar/download antigos)
+    document.getElementById('copyResult').style.display = 'none';
+    document.getElementById('downloadResult').style.display = 'none';
+}
+
+function updateStatus(message, progress) {
+    document.getElementById('statusMessage').textContent = message;
+    document.getElementById('progressText').textContent = progress + '%';
+    document.getElementById('progressBar').style.width = progress + '%';
+    
+    // Animar progresso gradualmente para dar feedback visual
+    if (progress > 0 && progress < 100) {
+        const bar = document.getElementById('progressBar');
+        bar.style.transition = 'width 0.5s ease-in-out';
+    }
+}
+
+function resetForm() {
+    // Resetar botão
+    const startBtn = document.getElementById('startTranscription');
+    startBtn.disabled = false;
+    startBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+    
+    // Resetar variáveis
+    currentTranscriptionId = null;
+    
+    // Limpar intervalos se existirem
+    if (progressInterval) {
+        clearInterval(progressInterval);
+        progressInterval = null;
+    }
+    
+    // Ocultar cards após um tempo
+    setTimeout(() => {
+        document.getElementById('statusCard').classList.add('hidden');
+        document.getElementById('resultSection').classList.add('hidden');
+        updateStatus('Aguardando início...', 0);
+    }, 3000);
+}
+</script>
+{% endblock %} 

@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Assistente ZANGARI{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Animações customizadas */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .animate-fade-in-up {
+        animation: fadeInUp 0.6s ease-out forwards;
+    }
+    
+    .card-hover {
+        transition: all 0.3s ease;
+    }
+    
+    .card-hover:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    
+    /* Garantir que todos os cards tenham a mesma altura */
+    .dashboard-card {
+        height: 140px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-height: 140px;
+    }
+    
+    .dashboard-card h3 {
+        font-size: 1.125rem !important; /* text-lg */
+        line-height: 1.3 !important;
+        margin: 0.5rem 0 0.25rem 0 !important;
+    }
+    
+    .dashboard-card p {
+        font-size: 0.875rem !important; /* text-sm */
+        line-height: 1.3 !important;
+        margin: 0 !important;
+    }
+    
+    .dashboard-card i {
+        font-size: 2.5rem !important; /* text-4xl */
+        margin-bottom: 0.75rem !important;
+    }
+    
+    /* Gradientes customizados */
+    .gradient-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .gradient-success {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    }
+    
+    .gradient-info {
+        background: linear-gradient(135deg, #2196F3 0%, #21CBF3 100%);
+    }
+    
+    .gradient-warning {
+        background: linear-gradient(135deg, #f2994a 0%, #f2c94c 100%);
+    }
+    
+    .gradient-secondary {
+        background: linear-gradient(135deg, #9333ea 0%, #c084fc 100%);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Container Principal -->
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+        <!-- Header de Boas-vindas -->
+        <div class="mb-8 animate-fade-in-up">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                        Bem-vindo, {{ user.full_name or user.username }}!
+                    </h1>
+                    <p class="text-gray-600">
+                        {{ greeting_message }}
+                    </p>
+                </div>
+                <a href="{{ url_for('main.logout') }}" 
+                   class="inline-flex items-center px-4 py-2 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105"
+                   onclick="return confirm('Tem certeza que deseja sair?');">
+                    <i class="fas fa-sign-out-alt mr-2"></i>
+                    <span class="hidden sm:inline">Sair</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Grid Principal -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Coluna Principal (2/3) -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Card de Informações da Conta -->
+                <div class="bg-white rounded-xl shadow-lg p-6 card-hover animate-fade-in-up" style="animation-delay: 0.1s;">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                            <i class="fas fa-user-circle text-indigo-600 mr-3"></i>
+                            Informações da Conta
+                        </h2>
+                        <span class="px-3 py-1 text-sm font-medium rounded-full {{ 'bg-purple-100 text-purple-800' if user.tipo == 'administrador' else 'bg-blue-100 text-blue-800' }}">
+                            {{ 'Administrador' if user.tipo == 'administrador' else 'Usuário' }}
+                        </span>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-3">
+                            <div>
+                                <p class="text-sm text-gray-500">Nome de usuário</p>
+                                <p class="font-medium text-gray-900">{{ user.username }}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Email</p>
+                                <p class="font-medium text-gray-900">{{ user.email or 'Não informado' }}</p>
+                            </div>
+                        </div>
+                        <div class="space-y-3">
+                            <div>
+                                <p class="text-sm text-gray-500">Último acesso</p>
+                                <p class="font-medium text-gray-900" id="lastLogin">-</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cards de Ações Rápidas -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Iniciar Chat -->
+                    <a href="{{ url_for('main.chat') }}" class="block animate-fade-in-up" style="animation-delay: 0.2s;">
+                        <div class="bg-white rounded-xl shadow-lg p-6 text-center card-hover gradient-primary text-white dashboard-card">
+                            <i class="fas fa-comments"></i>
+                            <h3 class="font-semibold">Iniciar Chat</h3>
+                            <p class="opacity-90">Converse com assistentes</p>
+                        </div>
+                    </a>
+
+                    <!-- Editar Perfil -->
+                    <a href="{{ url_for('main.profile') }}" class="block animate-fade-in-up" style="animation-delay: 0.3s;">
+                        <div class="bg-white rounded-xl shadow-lg p-6 text-center card-hover gradient-success text-white dashboard-card">
+                            <i class="fas fa-user-cog"></i>
+                            <h3 class="font-semibold">Meu Perfil</h3>
+                            <p class="opacity-90">Atualize suas informações</p>
+                        </div>
+                    </a>
+
+                    <!-- Documentos -->
+                    <a href="{{ url_for('main.documentos') }}" class="block animate-fade-in-up" style="animation-delay: 0.4s;">
+                        <div class="bg-white rounded-xl shadow-lg p-6 text-center card-hover gradient-info text-white dashboard-card">
+                            <i class="fas fa-file-alt"></i>
+                            <h3 class="font-semibold">Documentos</h3>
+                            <p class="opacity-90">Multas e Advertências</p>
+                        </div>
+                    </a>
+
+                    <!-- Administração (se for admin) ou Transcrição (se usuário comum) -->
+                    {% if user.tipo == 'administrador' %}
+                    <a href="{{ url_for('main.admin_assistants') }}" class="block animate-fade-in-up" style="animation-delay: 0.5s;">
+                        <div class="bg-white rounded-xl shadow-lg p-6 text-center card-hover gradient-warning text-white dashboard-card">
+                            <i class="fas fa-cog"></i>
+                            <h3 class="font-semibold">Administração</h3>
+                            <p class="opacity-90">Gerenciar sistema</p>
+                        </div>
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('main.admin_transcricao') }}" class="block animate-fade-in-up" style="animation-delay: 0.5s;">
+                        <div class="bg-white rounded-xl shadow-lg p-6 text-center card-hover gradient-secondary text-white dashboard-card">
+                            <i class="fas fa-microphone"></i>
+                            <h3 class="font-semibold">Transcrição</h3>
+                            <p class="opacity-90">Áudio para texto</p>
+                        </div>
+                    </a>
+                    {% endif %}
+                </div>
+                
+                <!-- Cards Adicionais para Admin -->
+                {% if user.tipo == 'administrador' %}
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+                    <!-- Card de Transcrição para Admin -->
+                    <a href="{{ url_for('main.admin_transcricao') }}" class="block animate-fade-in-up" style="animation-delay: 0.6s;">
+                        <div class="bg-white rounded-xl shadow-lg p-6 text-center card-hover gradient-secondary text-white dashboard-card">
+                            <i class="fas fa-microphone"></i>
+                            <h3 class="font-semibold">Transcrição</h3>
+                            <p class="opacity-90">Áudio para texto</p>
+                        </div>
+                    </a>
+                    
+                    <!-- Placeholder para futuras funcionalidades -->
+                    <div class="block animate-fade-in-up opacity-50" style="animation-delay: 0.7s;">
+                        <div class="bg-gray-100 rounded-xl shadow-lg p-6 text-center border-2 border-gray-200 dashboard-card">
+                            <i class="fas fa-calendar text-gray-400"></i>
+                            <h3 class="font-semibold text-gray-500">Agenda</h3>
+                            <p class="text-gray-400">Em breve</p>
+                        </div>
+                    </div>
+
+                    <!-- Placeholder adicional -->
+                    <div class="block animate-fade-in-up opacity-50" style="animation-delay: 0.8s;">
+                        <div class="bg-gray-100 rounded-xl shadow-lg p-6 text-center border-2 border-gray-200 dashboard-card">
+                            <i class="fas fa-chart-bar text-gray-400"></i>
+                            <h3 class="font-semibold text-gray-500">Relatórios</h3>
+                            <p class="text-gray-400">Em breve</p>
+                        </div>
+                    </div>
+
+                    <!-- Placeholder adicional -->
+                    <div class="block animate-fade-in-up opacity-50" style="animation-delay: 0.9s;">
+                        <div class="bg-gray-100 rounded-xl shadow-lg p-6 text-center border-2 border-gray-200 dashboard-card">
+                            <i class="fas fa-tools text-gray-400"></i>
+                            <h3 class="font-semibold text-gray-500">Configurações</h3>
+                            <p class="text-gray-400">Em breve</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Coluna Lateral (1/3) -->
+            <div class="space-y-6">
+                <!-- Card de Conversas Recentes -->
+                <div class="bg-white rounded-xl shadow-lg p-6 animate-fade-in-up" style="animation-delay: 0.2s;">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-history text-indigo-600 mr-3"></i>
+                        Conversas Recentes
+                    </h2>
+                    
+                    <div id="recentConversations" class="space-y-3">
+                        <!-- Conversas serão carregadas aqui via JavaScript -->
+                        <div class="text-center py-8">
+                            <i class="fas fa-comments text-gray-300 text-4xl mb-3"></i>
+                            <p class="text-gray-500">Nenhuma conversa recente</p>
+                            <a href="{{ url_for('main.chat') }}" class="text-indigo-600 hover:text-indigo-700 text-sm font-medium mt-2 inline-block">
+                                Iniciar primeira conversa →
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-12 bg-gray-50 border-t border-gray-100">
+        <div class="container mx-auto px-4 py-4 max-w-7xl">
+            <div class="text-center">
+                <p class="text-xs text-gray-500">
+                    © 2024 ZANGARI - Sistema de Assistentes Virtuais
+                </p>
+            </div>
+        </div>
+    </footer>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Função para formatar datas
+    function formatDate(timestamp) {
+        if (!timestamp) return 'Não disponível';
+        const date = new Date(timestamp * 1000);
+        return date.toLocaleDateString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    // Função para gerar mensagem de saudação baseada no horário
+    function getGreetingMessage() {
+        const hour = new Date().getHours();
+        if (hour < 12) return 'Bom dia! Como posso ajudá-lo hoje?';
+        if (hour < 18) return 'Boa tarde! Como posso ajudá-lo hoje?';
+        return 'Boa noite! Como posso ajudá-lo hoje?';
+    }
+
+    // Carregar conversas recentes do localStorage
+    function loadRecentConversations() {
+        const MESSAGES_STORAGE_KEY = 'chat_messages_history';
+        const history = JSON.parse(localStorage.getItem(MESSAGES_STORAGE_KEY) || '{}');
+        const conversationsDiv = document.getElementById('recentConversations');
+        
+        const conversations = Object.keys(history)
+            .map(assistantId => ({
+                id: assistantId,
+                name: history[assistantId].assistantName,
+                lastUpdate: history[assistantId].lastUpdate,
+                messageCount: history[assistantId].messages.length
+            }))
+            .sort((a, b) => b.lastUpdate - a.lastUpdate)
+            .slice(0, 5); // Mostrar apenas as 5 mais recentes
+
+        if (conversations.length > 0) {
+            let html = '';
+            conversations.forEach(conv => {
+                const date = new Date(conv.lastUpdate);
+                const timeAgo = getTimeAgo(date);
+                
+                html += `
+                    <a href="{{ url_for('main.chat') }}" class="block p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <p class="font-medium text-gray-900 text-sm">${conv.name}</p>
+                                <p class="text-xs text-gray-500 mt-1">${conv.messageCount} mensagens</p>
+                            </div>
+                            <span class="text-xs text-gray-400">${timeAgo}</span>
+                        </div>
+                    </a>
+                `;
+            });
+            conversationsDiv.innerHTML = html;
+        }
+    }
+
+    // Função para calcular tempo decorrido
+    function getTimeAgo(date) {
+        const seconds = Math.floor((new Date() - date) / 1000);
+        
+        let interval = seconds / 31536000;
+        if (interval > 1) return Math.floor(interval) + ' anos atrás';
+        
+        interval = seconds / 2592000;
+        if (interval > 1) return Math.floor(interval) + ' meses atrás';
+        
+        interval = seconds / 86400;
+        if (interval > 1) return Math.floor(interval) + ' dias atrás';
+        
+        interval = seconds / 3600;
+        if (interval > 1) return Math.floor(interval) + ' horas atrás';
+        
+        interval = seconds / 60;
+        if (interval > 1) return Math.floor(interval) + ' minutos atrás';
+        
+        return 'Agora mesmo';
+    }
+
+    // Inicializar ao carregar a página
+    document.addEventListener('DOMContentLoaded', function() {
+        // Preencher data do último acesso (usando created_at que era o campo do "Membro desde")
+        const createdAt = {{ user.created_at if user.created_at else 'null' }};
+        
+        if (createdAt) {
+            document.getElementById('lastLogin').textContent = formatDate(createdAt);
+        }
+
+        // Carregar conversas recentes
+        loadRecentConversations();
+    });
+</script>
+{% endblock %} 

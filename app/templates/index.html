@@ -1,0 +1,1058 @@
+{% extends "base.html" %}
+
+{% block title %}Chat - Assistente ZANGARI{% endblock %}
+
+{% block extra_head %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <base href="{{ request.url_root }}">
+<style>
+    /* Variáveis CSS para personalização de cores */
+    :root {
+        --primary-color: #6b7280; /* Cinza suave padrão */
+        --primary-dark: #4b5563;
+        --primary-light: #9ca3af;
+        --secondary-color: #6b7280;
+        --accent-color: #3b82f6;
+    }
+    
+    /* Estilos personalizados para o chat com design minimalista */
+    #chat {
+        background: white;
+        position: relative;
+        height: calc(100vh - 140px); /* Altura fixa para evitar rolagem */
+    }
+    
+    .message-container {
+        display: flex;
+        margin-bottom: 12px;
+        animation: slideIn 0.3s ease-out;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .message-container.user {
+        justify-content: flex-end;
+    }
+    
+    .message-container.bot {
+        justify-content: flex-start;
+    }
+    
+    .message-wrapper {
+        max-width: 70%;
+        display: flex;
+        align-items: flex-end;
+        gap: 8px;
+    }
+    
+    .message-container.user .message-wrapper {
+        flex-direction: row-reverse;
+    }
+    
+    .message-bubble {
+        position: relative;
+        padding: 10px 14px;
+        border-radius: 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        word-wrap: break-word;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .message-container.user .message-bubble {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        color: white;
+        border-bottom-right-radius: 4px;
+        box-shadow: 0 2px 8px rgba(107, 114, 128, 0.2);
+    }
+    
+    .message-container.bot .message-bubble {
+        background: #f8f9fa;
+        color: #2d3748;
+        border-bottom-left-radius: 4px;
+        border: 1px solid #e9ecef;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .message-time {
+        font-size: 10px;
+        margin-top: 4px;
+        text-align: right;
+        opacity: 0.7;
+    }
+    
+    .message-container.user .message-time {
+        color: rgba(255,255,255,0.8);
+    }
+    
+    .message-container.bot .message-time {
+        color: #718096;
+        text-align: left;
+    }
+    
+    .avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        font-size: 14px;
+    }
+    
+    .avatar.bot {
+        background: linear-gradient(135deg, var(--secondary-color) 0%, #4b5563 100%);
+        color: white;
+    }
+    
+    .avatar.user {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        color: white;
+    }
+    
+    .typing-indicator {
+        display: flex;
+        align-items: center;
+        padding: 10px 14px;
+        background: #f8f9fa;
+        border-radius: 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        border: 1px solid #e9ecef;
+    }
+    
+    .typing-indicator span {
+        height: 6px;
+        width: 6px;
+        background: linear-gradient(135deg, var(--secondary-color) 0%, #4b5563 100%);
+        border-radius: 50%;
+        display: inline-block;
+        margin: 0 2px;
+        animation: typing 1.4s infinite ease-in-out;
+    }
+    
+    .typing-indicator span:nth-child(1) {
+        animation-delay: -0.32s;
+    }
+    
+    .typing-indicator span:nth-child(2) {
+        animation-delay: -0.16s;
+    }
+    
+    @keyframes typing {
+        0%, 80%, 100% {
+            transform: scale(1);
+            opacity: 0.5;
+        }
+        40% {
+            transform: scale(1.3);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* Estilo para documentos gerados */
+    .document-card {
+        background: white;
+        border-radius: 12px;
+        padding: 14px;
+        margin-top: 8px;
+        border: 1px solid #e9ecef;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .document-card-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #2d3748;
+        font-size: 14px;
+    }
+    
+    .document-card-header i {
+        margin-right: 6px;
+    }
+    
+    /* Input area minimalista */
+    .input-area {
+        background: white;
+        border-top: 3px solid #e5e7eb;
+        box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .input-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px;
+        max-width: 100%;
+        margin: 0 auto;
+    }
+    
+    .input-wrapper {
+        flex: 1;
+        position: relative;
+    }
+    
+    #input {
+        width: 100%;
+        padding: 10px 16px;
+        border: 1px solid #dc2626;
+        border-radius: 20px;
+        background: white;
+        outline: none;
+        font-size: 14px;
+        resize: none;
+        max-height: 100px;
+        overflow-y: auto;
+        transition: all 0.3s ease;
+        box-shadow: none;
+    }
+    
+    #input:focus {
+        border-color: #dc2626;
+        box-shadow: none;
+    }
+    
+    .send-button {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        color: white;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+    }
+    
+    .send-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(107, 114, 128, 0.4);
+    }
+    
+    .send-button:disabled {
+        background: #e5e7eb;
+        color: #9ca3af;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    /* Header minimalista */
+    .chat-header {
+        background: white;
+        color: #1f2937;
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 3px solid #e5e7eb;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .chat-header-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .assistant-avatar {
+        width: 36px;
+        height: 36px;
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .assistant-info h3 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: #1f2937;
+    }
+    
+    .assistant-status {
+        font-size: 12px;
+        color: #10b981;
+        font-weight: 500;
+    }
+    
+    .chat-actions {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+    }
+    
+    .chat-actions button {
+        background: white;
+        border: 1px solid #e5e7eb;
+        color: #6b7280;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    
+    .chat-actions button:hover {
+        background: #f9fafb;
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+    }
+    
+    /* Menu do usuário melhorado */
+    .user-menu-button {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        margin-left: 8px;
+        min-width: 160px;
+    }
+    
+    .user-menu-button:hover {
+        background: #f9fafb;
+        border-color: var(--primary-color);
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+    }
+    
+    .user-menu-button span {
+        font-size: 14px;
+        font-weight: 500;
+        color: #374151;
+        max-width: 140px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        flex: 1;
+    }
+    
+    .user-menu-button i {
+        color: #9ca3af;
+        font-size: 12px;
+        flex-shrink: 0;
+    }
+    
+    /* Dropdown do usuário */
+    #userDropdown {
+        box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+        border: 1px solid #e5e7eb;
+    }
+    
+    /* Responsividade */
+    @media (max-width: 768px) {
+        .input-container {
+            padding: 10px 12px;
+        }
+        
+        .chat-header {
+            padding: 10px 12px;
+        }
+        
+        .assistant-info h3 {
+            font-size: 14px;
+        }
+        
+        .message-wrapper {
+            max-width: 85%;
+        }
+        
+        .user-menu-button {
+            min-width: 140px;
+        }
+        
+        .user-menu-button span {
+            max-width: 120px;
+        }
+        
+        #chat {
+            height: calc(100vh - 120px);
+        }
+    }
+    
+    /* Estilos para upload de imagens */
+    .upload-container {
+        background: #f8fafc !important;
+        border: 2px dashed #cbd5e1 !important;
+        border-radius: 12px;
+        padding: 20px;
+        margin: 10px 0;
+        transition: all 0.3s ease;
+    }
+    
+    .upload-area {
+        text-align: center;
+        padding: 30px 20px;
+        cursor: pointer;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    
+    .upload-area:hover {
+        background: #f1f5f9;
+        border-color: #3b82f6;
+    }
+    
+    .upload-area.dragover {
+        background: #dbeafe;
+        border-color: #3b82f6;
+        transform: scale(1.02);
+    }
+    
+    .upload-icon {
+        font-size: 48px;
+        color: #64748b;
+        margin-bottom: 15px;
+    }
+    
+    .upload-text {
+        color: #475569;
+        font-size: 16px;
+        margin-bottom: 20px;
+    }
+    
+    .upload-text strong {
+        color: #1e293b;
+        font-weight: 600;
+    }
+    
+    .upload-text small {
+        color: #64748b;
+        font-size: 14px;
+    }
+    
+    .uploaded-images {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin: 20px 0;
+    }
+    
+    .image-preview {
+        position: relative;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .image-preview:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .image-preview img {
+        width: 100%;
+        height: 120px;
+        object-fit: cover;
+        display: block;
+    }
+    
+    .image-info {
+        padding: 10px;
+        background: white;
+    }
+    
+    .image-name {
+        font-size: 12px;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .image-size {
+        font-size: 11px;
+        color: #64748b;
+    }
+    
+    .btn-remove {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: #ef4444;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 12px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    .btn-remove:hover {
+        background: #dc2626;
+        transform: scale(1.1);
+    }
+    
+    .upload-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+    
+    .btn-upload, .btn-skip, .btn-confirm {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .btn-upload {
+        background: #3b82f6;
+        color: white;
+    }
+    
+    .btn-upload:hover {
+        background: #2563eb;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+    }
+    
+    .btn-skip {
+        background: #6b7280;
+        color: white;
+    }
+    
+    .btn-skip:hover {
+        background: #4b5563;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(107, 114, 128, 0.3);
+    }
+    
+    .btn-confirm {
+        background: #10b981;
+        color: white;
+    }
+    
+    .btn-confirm:hover {
+        background: #059669;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+    }
+    
+    /* Responsividade para upload de imagens */
+    @media (max-width: 768px) {
+        .uploaded-images {
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        }
+        
+        .upload-actions {
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .btn-upload, .btn-skip, .btn-confirm {
+            width: 100%;
+            max-width: 200px;
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex flex-col bg-white">
+    <!-- Main Container - Ocupar toda a tela -->
+    <div class="flex-1 w-full bg-white shadow-lg flex flex-col">
+        <!-- Chat Header -->
+        <div class="chat-header">
+            <div class="chat-header-info">
+                <div class="assistant-avatar">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="assistant-info">
+                    <h3 id="assistantName">Selecione um assistente</h3>
+                    <div class="assistant-status">Online</div>
+                </div>
+            </div>
+            <div class="chat-actions">
+                <button onclick="openAssistantModal()" title="Selecionar Assistente">
+                    <i class="fas fa-robot"></i>
+                </button>
+                <button onclick="openConversationsModal()" title="Conversas Recentes">
+                    <i class="fas fa-history"></i>
+                </button>
+                <button onclick="resetThread()" title="Nova Conversa">
+                    <i class="fas fa-redo"></i>
+                </button>
+                <div class="relative">
+                    <button onclick="toggleUserMenu()" class="user-menu-button">
+                        <span>{{ g.user.full_name or g.user.username }}</span>
+                        <i class="fas fa-chevron-down"></i>
+                </button>
+                    <div id="userDropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 hidden z-50">
+                        <div class="py-2">
+                            <a href="/dashboard" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-tachometer-alt w-5 mr-3"></i>
+                                <span>Dashboard</span>
+                            </a>
+                            <a href="/profile" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-user w-5 mr-3"></i>
+                                <span>Meu Perfil</span>
+                            </a>
+                            {% if g.user.tipo == 'administrador' %}
+                            <a href="/admin/assistants" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-cog w-5 mr-3"></i>
+                                <span>Administração</span>
+                            </a>
+                            {% endif %}
+                            <hr class="my-2">
+                            <a href="/auth/logout" class="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                                <i class="fas fa-sign-out-alt w-5 mr-3"></i>
+                                <span>Sair</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Messages Area -->
+        <div id="chat" class="flex-1 overflow-y-auto p-4">
+            <!-- Mensagens serão adicionadas aqui -->
+                    </div>
+        
+        <!-- Input Area -->
+        <div class="input-area">
+            <div class="input-container">
+                <div class="input-wrapper">
+                    <textarea id="input" 
+                           placeholder="Digite uma mensagem" 
+                           rows="1"
+                           onkeypress="handleKeyPress(event)"
+                           oninput="adjustTextareaHeight(this)"></textarea>
+                    </div>
+                <button onclick="sendMessage()" class="send-button" id="sendButton">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<!-- Modal Selecionar Assistente -->
+<div id="assistantModal" class="fixed inset-0 bg-black bg-opacity-50 hidden overflow-y-auto h-full w-full z-50 backdrop-blur-sm">
+    <div class="relative top-20 mx-auto p-6 border w-full max-w-2xl shadow-2xl rounded-2xl bg-white backdrop-blur-lg border-gray-200">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold text-gray-900 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Selecionar Assistente</h3>
+            <button onclick="closeAssistantModal()" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-2 transition-all">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+            </div>
+        
+        <!-- Busca -->
+        <div class="mb-6">
+            <div class="relative flex">
+                <input type="text" id="searchAssistantInput" 
+                       class="flex-1 pl-12 pr-4 py-3 border-2 border-gray-200 rounded-l-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                       placeholder="Buscar por número ou nome...">
+                <i class="fas fa-search absolute left-4 top-4 text-gray-400"></i>
+                <button onclick="searchAssistants()" 
+                        class="px-4 py-3 bg-blue-500 text-white border-2 border-blue-500 rounded-r-xl hover:bg-blue-600 hover:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Loading -->
+        <div id="loadingSpinner" class="text-center py-12 hidden">
+            <div class="inline-flex items-center">
+                <svg class="animate-spin h-10 w-10 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span class="ml-3 text-gray-600 font-medium">Carregando assistentes...</span>
+            </div>
+        </div>
+        
+        <!-- Lista de Assistentes -->
+        <div id="assistantList" class="max-h-96 overflow-y-auto space-y-3">
+            <!-- Assistentes serão carregados aqui -->
+        </div>
+    </div>
+</div>
+
+<!-- Modal Conversas Recentes -->
+<div id="conversationsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden overflow-y-auto h-full w-full z-50 backdrop-blur-sm">
+    <div class="relative top-20 mx-auto p-6 border w-full max-w-2xl shadow-2xl rounded-2xl bg-white backdrop-blur-lg border-gray-200">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold text-gray-900 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Conversas Recentes</h3>
+            <button onclick="closeConversationsModal()" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-2 transition-all">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <!-- Lista de Conversas -->
+        <div id="recentConversationsList" class="max-h-96 overflow-y-auto space-y-3">
+            <!-- Conversas serão carregadas aqui -->
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação Personalizado -->
+<div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 hidden overflow-y-auto h-full w-full z-50 backdrop-blur-sm">
+    <div class="relative top-1/2 transform -translate-y-1/2 mx-auto p-6 border w-full max-w-md shadow-2xl rounded-2xl bg-white backdrop-blur-lg border-gray-200">
+        <div class="text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4">
+                <i class="fas fa-exclamation-triangle text-yellow-600 text-xl"></i>
+            </div>
+            <h3 id="confirmTitle" class="text-lg font-semibold text-gray-900 mb-2">Confirmar Ação</h3>
+            <p id="confirmMessage" class="text-sm text-gray-600 mb-6">Tem certeza que deseja continuar?</p>
+            <div class="flex gap-3 justify-center">
+                <button id="confirmCancel" onclick="closeConfirmModal()" 
+                        class="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all font-medium">
+                    Cancelar
+                </button>
+                <button id="confirmOk" onclick="confirmAction()" 
+                        class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all font-medium">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Alerta Personalizado -->
+<div id="alertModal" class="fixed inset-0 bg-black bg-opacity-50 hidden overflow-y-auto h-full w-full z-50 backdrop-blur-sm">
+    <div class="relative top-1/2 transform -translate-y-1/2 mx-auto p-6 border w-full max-w-md shadow-2xl rounded-2xl bg-white backdrop-blur-lg border-gray-200">
+        <div class="text-center">
+            <div id="alertIcon" class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
+                <i class="fas fa-info-circle text-blue-600 text-xl"></i>
+            </div>
+            <h3 id="alertTitle" class="text-lg font-semibold text-gray-900 mb-2">Informação</h3>
+            <p id="alertMessage" class="text-sm text-gray-600 mb-6">Mensagem de alerta</p>
+            <button onclick="closeAlertModal()" 
+                    class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all font-medium">
+                OK
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Toasts -->
+<div class="fixed bottom-6 right-6 space-y-3 z-50">
+    <!-- Loading Toast -->
+    <div id="loadingToast" class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-4 rounded-xl shadow-2xl hidden backdrop-blur-lg border border-blue-400">
+        <div class="flex items-center">
+            <svg class="animate-spin h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span class="font-medium">Processando...</span>
+        </div>
+    </div>
+    
+    <!-- Success Toast -->
+    <div id="successToast" class="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-4 rounded-xl shadow-2xl hidden backdrop-blur-lg border border-green-400">
+        <div class="flex items-center">
+            <i class="fas fa-check-circle mr-3 text-lg"></i>
+            <span class="font-medium">Operação realizada com sucesso!</span>
+        </div>
+    </div>
+    
+    <!-- Error Toast -->
+    <div id="errorToast" class="bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-4 rounded-xl shadow-2xl hidden backdrop-blur-lg border border-red-400">
+        <div class="flex items-center">
+            <i class="fas fa-exclamation-circle mr-3 text-lg"></i>
+            <span id="errorToastMessage" class="font-medium">Ocorreu um erro</span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+    // Variáveis globais
+        let selectedAssistantId = localStorage.getItem('selectedAssistantId');
+    let selectedAssistantName = localStorage.getItem('selectedAssistantName');
+        window.baseUrl = "{{ g.base_url }}";
+    window.currentUserId = "{{ g.user.user_id }}";
+    window.userInitial = "{{ (g.user.full_name or g.user.username)[0].upper() }}";
+    
+    // Carregar cores personalizadas do sistema
+    async function loadSystemColors() {
+        try {
+            const response = await fetch('/admin/api/settings');
+            if (response.ok) {
+                const settings = await response.json();
+                
+                // Aplicar as cores personalizadas
+                const root = document.documentElement;
+                root.style.setProperty('--primary-color', settings.primary_color || '#6b7280');
+                root.style.setProperty('--primary-dark', settings.primary_dark || '#4b5563');
+                root.style.setProperty('--primary-light', settings.primary_light || '#9ca3af');
+                root.style.setProperty('--secondary-color', settings.secondary_color || '#6b7280');
+                root.style.setProperty('--accent-color', settings.accent_color || '#3b82f6');
+            }
+        } catch (error) {
+            console.log('Usando cores padrão:', error);
+            // Se falhar, manter as cores padrão definidas no CSS
+        }
+    }
+    
+    // Carregar cores ao inicializar a página
+    loadSystemColors();
+    
+    // Atualizar nome do assistente no header se já tiver um selecionado
+    if (selectedAssistantName) {
+        const assistantNameElement = document.getElementById('assistantName');
+        if (assistantNameElement) {
+            assistantNameElement.textContent = selectedAssistantName;
+        }
+    }
+    
+    // Toggle menu do usuário
+    function toggleUserMenu() {
+        const userDropdown = document.getElementById('userDropdown');
+        if (userDropdown) {
+            userDropdown.classList.toggle('hidden');
+        }
+    }
+    
+    // Fechar dropdown ao clicar fora
+    document.addEventListener('click', function(event) {
+        const dropdown = document.getElementById('userDropdown');
+        const button = event.target.closest('button[onclick="toggleUserMenu()"]');
+        if (!button && dropdown && !dropdown.contains(event.target)) {
+            dropdown.classList.add('hidden');
+        }
+    });
+    
+    // Ajustar altura do textarea automaticamente
+    function adjustTextareaHeight(textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = textarea.scrollHeight + 'px';
+    }
+    
+    // Funções dos modais
+    function openAssistantModal() {
+        const assistantModal = document.getElementById('assistantModal');
+        if (assistantModal) {
+            assistantModal.classList.remove('hidden');
+        }
+        if (typeof loadAssistants === 'function') {
+            loadAssistants();
+        }
+    }
+    
+    function closeAssistantModal() {
+        const assistantModal = document.getElementById('assistantModal');
+        if (assistantModal) {
+            assistantModal.classList.add('hidden');
+        }
+    }
+    
+    function openConversationsModal() {
+        const conversationsModal = document.getElementById('conversationsModal');
+        if (conversationsModal) {
+            conversationsModal.classList.remove('hidden');
+        }
+        // loadRecentConversations();
+    }
+    
+    function closeConversationsModal() {
+        const conversationsModal = document.getElementById('conversationsModal');
+        if (conversationsModal) {
+            conversationsModal.classList.add('hidden');
+        }
+    }
+    
+    // Toast functions
+    function showToast(toastId, duration = 3000) {
+        const toast = document.getElementById(toastId);
+        if (toast) {
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, duration);
+        }
+    }
+    
+    function showLoadingToast() {
+        const loadingToast = document.getElementById('loadingToast');
+        if (loadingToast) {
+            loadingToast.classList.remove('hidden');
+        }
+    }
+    
+    function hideLoadingToast() {
+        const loadingToast = document.getElementById('loadingToast');
+        if (loadingToast) {
+            loadingToast.classList.add('hidden');
+        }
+    }
+    
+    function showSuccessToast() {
+        showToast('successToast');
+    }
+    
+    function showErrorToast(message) {
+        const errorToastMessage = document.getElementById('errorToastMessage');
+        if (message && errorToastMessage) {
+            errorToastMessage.textContent = message;
+        }
+        showToast('errorToast');
+    }
+    
+    // Funções para modais personalizados
+    let confirmCallback = null;
+    
+    function showConfirm(title, message, callback) {
+        const confirmModal = document.getElementById('confirmModal');
+        const confirmTitle = document.getElementById('confirmTitle');
+        const confirmMessage = document.getElementById('confirmMessage');
+        
+        if (confirmTitle) confirmTitle.textContent = title;
+        if (confirmMessage) confirmMessage.textContent = message;
+        confirmCallback = callback;
+        
+        if (confirmModal) {
+            confirmModal.classList.remove('hidden');
+        }
+    }
+    
+    function closeConfirmModal() {
+        const confirmModal = document.getElementById('confirmModal');
+        if (confirmModal) {
+            confirmModal.classList.add('hidden');
+        }
+        confirmCallback = null;
+    }
+    
+    function confirmAction() {
+        if (confirmCallback) {
+            confirmCallback();
+        }
+        closeConfirmModal();
+    }
+    
+    function showAlert(title, message, type = 'info') {
+        const alertModal = document.getElementById('alertModal');
+        const alertTitle = document.getElementById('alertTitle');
+        const alertMessage = document.getElementById('alertMessage');
+        const alertIcon = document.getElementById('alertIcon');
+        
+        if (alertTitle) alertTitle.textContent = title;
+        if (alertMessage) alertMessage.textContent = message;
+        
+        // Configurar ícone e cor baseado no tipo
+        if (alertIcon) {
+            alertIcon.className = 'mx-auto flex items-center justify-center h-12 w-12 rounded-full mb-4';
+            const iconElement = alertIcon.querySelector('i');
+            
+            switch(type) {
+                case 'success':
+                    alertIcon.classList.add('bg-green-100');
+                    if (iconElement) {
+                        iconElement.className = 'fas fa-check-circle text-green-600 text-xl';
+                    }
+                    break;
+                case 'error':
+                    alertIcon.classList.add('bg-red-100');
+                    if (iconElement) {
+                        iconElement.className = 'fas fa-exclamation-circle text-red-600 text-xl';
+                    }
+                    break;
+                case 'warning':
+                    alertIcon.classList.add('bg-yellow-100');
+                    if (iconElement) {
+                        iconElement.className = 'fas fa-exclamation-triangle text-yellow-600 text-xl';
+                    }
+                    break;
+                default: // info
+                    alertIcon.classList.add('bg-blue-100');
+                    if (iconElement) {
+                        iconElement.className = 'fas fa-info-circle text-blue-600 text-xl';
+                    }
+            }
+        }
+        
+        if (alertModal) {
+            alertModal.classList.remove('hidden');
+        }
+    }
+    
+    function closeAlertModal() {
+        const alertModal = document.getElementById('alertModal');
+        if (alertModal) {
+            alertModal.classList.add('hidden');
+        }
+    }
+    
+    // Sobrescrever funções nativas do navegador
+    window.confirm = function(message) {
+        return new Promise((resolve) => {
+            showConfirm('Confirmação', message, () => resolve(true));
+            // Se cancelar, resolve(false) será chamado pelo closeConfirmModal
+            const originalClose = closeConfirmModal;
+            closeConfirmModal = function() {
+                originalClose();
+                resolve(false);
+                closeConfirmModal = originalClose;
+            };
+        });
+    };
+    
+    window.alert = function(message) {
+        showAlert('Aviso', message, 'info');
+    };
+    </script>
+    <script src="{{ url_for('static', filename='js/image-upload.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+{% endblock %}

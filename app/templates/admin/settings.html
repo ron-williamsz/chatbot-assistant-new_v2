@@ -1,0 +1,463 @@
+{% extends "base.html" %}
+
+{% block title %}Configurações do Sistema - Admin{% endblock %}
+
+{% block extra_head %}
+<style>
+    .color-preview {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        border: 2px solid #e5e7eb;
+        display: inline-block;
+        vertical-align: middle;
+        margin-left: 10px;
+    }
+    
+    .color-input-group {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .color-input {
+        width: 80px;
+        height: 40px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+    
+    .preview-section {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-top: 20px;
+    }
+    
+    .preview-header {
+        padding: 16px 20px;
+        border-radius: 8px;
+        color: white;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .preview-message {
+        padding: 12px 16px;
+        border-radius: 18px;
+        margin-bottom: 12px;
+        max-width: 70%;
+    }
+    
+    .preview-message.user {
+        margin-left: auto;
+        color: white;
+    }
+    
+    .preview-message.bot {
+        background: #f8f9fa;
+        color: #2d3748;
+        border: 1px solid #e9ecef;
+    }
+    
+    .preview-button {
+        padding: 8px 16px;
+        border-radius: 20px;
+        border: none;
+        color: white;
+        cursor: pointer;
+        margin-right: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-4xl mx-auto px-4">
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Configurações do Sistema</h1>
+                    <p class="text-gray-600 mt-1">Personalize as cores e aparência do chat</p>
+                </div>
+                <a href="/admin/assistants" class="inline-flex items-center px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Voltar
+                </a>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Configurações de Cores -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-6">
+                    <i class="fas fa-palette mr-2 text-blue-500"></i>
+                    Personalização de Cores
+                </h2>
+
+                <form id="colorForm" class="space-y-6">
+                    <!-- Cor Primária -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Cor Primária (Header, Botões)
+                        </label>
+                        <div class="color-input-group">
+                            <input type="color" id="primary_color" name="primary_color" 
+                                   value="{{ settings.primary_color or '#dc2626' }}" 
+                                   class="color-input">
+                            <input type="text" id="primary_color_text" 
+                                   value="{{ settings.primary_color or '#dc2626' }}" 
+                                   class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="#dc2626">
+                            <div class="color-preview" id="primary_color_preview"></div>
+                        </div>
+                    </div>
+
+                    <!-- Cor Primária Escura -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Cor Primária Escura (Hover, Gradientes)
+                        </label>
+                        <div class="color-input-group">
+                            <input type="color" id="primary_dark" name="primary_dark" 
+                                   value="{{ settings.primary_dark or '#b91c1c' }}" 
+                                   class="color-input">
+                            <input type="text" id="primary_dark_text" 
+                                   value="{{ settings.primary_dark or '#b91c1c' }}" 
+                                   class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="#b91c1c">
+                            <div class="color-preview" id="primary_dark_preview"></div>
+                        </div>
+                    </div>
+
+                    <!-- Cor Primária Clara -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Cor Primária Clara (Destaques)
+                        </label>
+                        <div class="color-input-group">
+                            <input type="color" id="primary_light" name="primary_light" 
+                                   value="{{ settings.primary_light or '#ef4444' }}" 
+                                   class="color-input">
+                            <input type="text" id="primary_light_text" 
+                                   value="{{ settings.primary_light or '#ef4444' }}" 
+                                   class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="#ef4444">
+                            <div class="color-preview" id="primary_light_preview"></div>
+                        </div>
+                    </div>
+
+                    <!-- Cor Secundária -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Cor Secundária (Avatares Bot)
+                        </label>
+                        <div class="color-input-group">
+                            <input type="color" id="secondary_color" name="secondary_color" 
+                                   value="{{ settings.secondary_color or '#6b7280' }}" 
+                                   class="color-input">
+                            <input type="text" id="secondary_color_text" 
+                                   value="{{ settings.secondary_color or '#6b7280' }}" 
+                                   class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="#6b7280">
+                            <div class="color-preview" id="secondary_color_preview"></div>
+                        </div>
+                    </div>
+
+                    <!-- Cor de Destaque -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Cor de Destaque (Links, Ícones)
+                        </label>
+                        <div class="color-input-group">
+                            <input type="color" id="accent_color" name="accent_color" 
+                                   value="{{ settings.accent_color or '#3b82f6' }}" 
+                                   class="color-input">
+                            <input type="text" id="accent_color_text" 
+                                   value="{{ settings.accent_color or '#3b82f6' }}" 
+                                   class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="#3b82f6">
+                            <div class="color-preview" id="accent_color_preview"></div>
+                        </div>
+                    </div>
+
+                    <!-- Botões de Ação -->
+                    <div class="flex gap-3 pt-4">
+                        <button type="submit" class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+                            <i class="fas fa-save mr-2"></i>
+                            Salvar Configurações
+                        </button>
+                        <button type="button" id="resetBtn" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">
+                            <i class="fas fa-undo mr-2"></i>
+                            Resetar
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Preview -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-6">
+                    <i class="fas fa-eye mr-2 text-green-500"></i>
+                    Visualização
+                </h2>
+
+                <div class="preview-section">
+                    <!-- Header Preview -->
+                    <div class="preview-header" id="previewHeader">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                                <i class="fas fa-robot text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold">Assistente Demo</h3>
+                                <p class="text-sm opacity-90">Online</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="preview-button" id="previewBtn1">
+                                <i class="fas fa-users"></i>
+                            </button>
+                            <button class="preview-button" id="previewBtn2">
+                                <i class="fas fa-history"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Messages Preview -->
+                    <div class="space-y-3">
+                        <div class="preview-message bot">
+                            <div class="flex items-start gap-3">
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm" id="previewBotAvatar">
+                                    <i class="fas fa-robot"></i>
+                                </div>
+                                <div>
+                                    <p>Olá! Como posso ajudá-lo hoje?</p>
+                                    <p class="text-xs text-gray-500 mt-1">14:30</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="preview-message user" id="previewUserMessage">
+                            <div class="flex items-start gap-3 justify-end">
+                                <div>
+                                    <p>Preciso de ajuda com um documento</p>
+                                    <p class="text-xs opacity-70 mt-1 text-right">14:31</p>
+                                </div>
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm" id="previewUserAvatar">
+                                    U
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="preview-message bot">
+                            <div class="flex items-start gap-3">
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm" id="previewBotAvatar2">
+                                    <i class="fas fa-robot"></i>
+                                </div>
+                                <div>
+                                    <p>Claro! Posso ajudá-lo a gerar documentos. Que tipo de documento você precisa?</p>
+                                    <p class="text-xs text-gray-500 mt-1">14:31</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Send Button Preview -->
+                    <div class="mt-4 flex justify-end">
+                        <button class="w-10 h-10 rounded-full text-white flex items-center justify-center" id="previewSendBtn">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast de Sucesso -->
+<div id="successToast" class="fixed bottom-6 right-6 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg hidden">
+    <div class="flex items-center">
+        <i class="fas fa-check-circle mr-3"></i>
+        <span>Configurações salvas com sucesso!</span>
+    </div>
+</div>
+
+<!-- Toast de Erro -->
+<div id="errorToast" class="fixed bottom-6 right-6 bg-red-500 text-white px-6 py-4 rounded-lg shadow-lg hidden">
+    <div class="flex items-center">
+        <i class="fas fa-exclamation-circle mr-3"></i>
+        <span id="errorMessage">Erro ao salvar configurações</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Elementos do formulário
+    const colorInputs = ['primary_color', 'primary_dark', 'primary_light', 'secondary_color', 'accent_color'];
+    
+    // Inicializar previews
+    updateAllPreviews();
+    
+    // Configurar eventos para cada cor
+    colorInputs.forEach(colorName => {
+        const colorInput = document.getElementById(colorName);
+        const textInput = document.getElementById(colorName + '_text');
+        const preview = document.getElementById(colorName + '_preview');
+        
+        // Sincronizar color input com text input
+        colorInput.addEventListener('input', function() {
+            textInput.value = this.value;
+            updatePreview(colorName, this.value);
+            updateLivePreview();
+        });
+        
+        // Sincronizar text input com color input
+        textInput.addEventListener('input', function() {
+            if (isValidHexColor(this.value)) {
+                colorInput.value = this.value;
+                updatePreview(colorName, this.value);
+                updateLivePreview();
+            }
+        });
+        
+        // Atualizar preview inicial
+        updatePreview(colorName, colorInput.value);
+    });
+    
+    // Função para validar cor hexadecimal
+    function isValidHexColor(hex) {
+        return /^#[0-9A-F]{6}$/i.test(hex);
+    }
+    
+    // Função para atualizar preview individual
+    function updatePreview(colorName, color) {
+        const preview = document.getElementById(colorName + '_preview');
+        if (preview) {
+            preview.style.backgroundColor = color;
+        }
+    }
+    
+    // Função para atualizar todos os previews
+    function updateAllPreviews() {
+        colorInputs.forEach(colorName => {
+            const colorInput = document.getElementById(colorName);
+            updatePreview(colorName, colorInput.value);
+        });
+        updateLivePreview();
+    }
+    
+    // Função para atualizar preview ao vivo
+    function updateLivePreview() {
+        const primaryColor = document.getElementById('primary_color').value;
+        const primaryDark = document.getElementById('primary_dark').value;
+        const secondaryColor = document.getElementById('secondary_color').value;
+        
+        // Atualizar header
+        const previewHeader = document.getElementById('previewHeader');
+        previewHeader.style.background = `linear-gradient(135deg, ${primaryColor} 0%, ${primaryDark} 100%)`;
+        
+        // Atualizar botões do header
+        const previewBtns = [document.getElementById('previewBtn1'), document.getElementById('previewBtn2')];
+        previewBtns.forEach(btn => {
+            btn.style.background = 'rgba(255,255,255,0.1)';
+        });
+        
+        // Atualizar mensagem do usuário
+        const userMessage = document.getElementById('previewUserMessage');
+        userMessage.style.background = `linear-gradient(135deg, ${primaryColor} 0%, ${primaryDark} 100%)`;
+        
+        // Atualizar avatares
+        const userAvatar = document.getElementById('previewUserAvatar');
+        userAvatar.style.background = `linear-gradient(135deg, ${primaryColor} 0%, ${primaryDark} 100%)`;
+        
+        const botAvatars = [document.getElementById('previewBotAvatar'), document.getElementById('previewBotAvatar2')];
+        botAvatars.forEach(avatar => {
+            avatar.style.background = `linear-gradient(135deg, ${secondaryColor} 0%, #4b5563 100%)`;
+        });
+        
+        // Atualizar botão de envio
+        const sendBtn = document.getElementById('previewSendBtn');
+        sendBtn.style.background = `linear-gradient(135deg, ${primaryColor} 0%, ${primaryDark} 100%)`;
+    }
+    
+    // Submissão do formulário
+    document.getElementById('colorForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const data = {};
+        
+        for (let [key, value] of formData.entries()) {
+            if (isValidHexColor(value)) {
+                data[key] = value;
+            }
+        }
+        
+        try {
+            const response = await fetch('/admin/api/settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                showToast('successToast');
+                // Recarregar a página após 2 segundos para aplicar as mudanças
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            } else {
+                throw new Error(result.error || 'Erro ao salvar configurações');
+            }
+        } catch (error) {
+            document.getElementById('errorMessage').textContent = error.message;
+            showToast('errorToast');
+        }
+    });
+    
+    // Botão de reset
+    document.getElementById('resetBtn').addEventListener('click', function() {
+        if (confirm('Tem certeza que deseja resetar as cores para os valores padrão?')) {
+            // Valores padrão
+            const defaults = {
+                primary_color: '#dc2626',
+                primary_dark: '#b91c1c',
+                primary_light: '#ef4444',
+                secondary_color: '#6b7280',
+                accent_color: '#3b82f6'
+            };
+            
+            // Aplicar valores padrão
+            Object.keys(defaults).forEach(key => {
+                document.getElementById(key).value = defaults[key];
+                document.getElementById(key + '_text').value = defaults[key];
+                updatePreview(key, defaults[key]);
+            });
+            
+            updateLivePreview();
+        }
+    });
+    
+    // Função para mostrar toast
+    function showToast(toastId, duration = 3000) {
+        const toast = document.getElementById(toastId);
+        toast.classList.remove('hidden');
+        setTimeout(() => {
+            toast.classList.add('hidden');
+        }, duration);
+    }
+});
+</script>
+{% endblock %} 

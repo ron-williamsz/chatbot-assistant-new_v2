@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker exec chatbot-assistant-new python -c \"\nimport sqlite3\nimport hashlib\n\ndb_path = ''/app/app/data/assistants.db''\nconn = sqlite3.connect(db_path)\ncursor = conn.cursor()\n\n# Buscar usuário ron\ncursor.execute(''SELECT id, username, password_hash, is_active FROM users WHERE username=?'', (''ron'',))\nuser = cursor.fetchone()\n\nprint(''=== DADOS DO USUÁRIO NO BANCO ==='')\nprint(f''ID: {user[0]}'')\nprint(f''Username: {user[1]}'')\nprint(f''Password Hash no banco: {user[2]}'')\nprint(f''Is Active: {user[3]}'')\nprint()\n\n# Gerar hash da senha que estou tentando\npassword = ''ron123''\ngenerated_hash = hashlib.sha256(password.encode()).hexdigest()\nprint(''=== HASH GERADO PELA SENHA ==='')\nprint(f''Senha: {password}'')\nprint(f''Hash gerado: {generated_hash}'')\nprint()\n\n# Comparar\nprint(''=== COMPARAÇÃO ==='')\nprint(f''Hashes são iguais? {user[2] == generated_hash}'')\n\n# Tentar query direta como faz o authenticate_user\ncursor.execute(''''''\n    SELECT id, username FROM users\n    WHERE username = ? AND password_hash = ?\n'''''', (''ron'', generated_hash))\n\nresult = cursor.fetchone()\nprint(f''Query encontrou usuário? {result is not None}'')\nif result:\n    print(f''Usuário encontrado: ID={result[0]}, Username={result[1]}'')\n\nconn.close()\n\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

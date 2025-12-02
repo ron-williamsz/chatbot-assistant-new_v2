@@ -1,0 +1,535 @@
+{% extends "base.html" %}
+
+{% block title %}Administração de Carteiras - ZANGARI{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <!-- Logo e Navegação -->
+                <div class="flex items-center space-x-8">
+                    <div class="flex items-center space-x-3">
+                        <i class="fas fa-robot text-2xl text-primary-600"></i>
+                        <h1 class="text-xl font-semibold text-gray-900">ZANGARI Assistente</h1>
+                    </div>
+                    
+                    <!-- Tabs de navegação -->
+                    <nav class="flex space-x-1">
+                        <a href="/admin/assistants" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
+                            Assistentes
+                        </a>
+                        <a href="/admin/users" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
+                            Usuários
+                        </a>
+                        <a href="/admin/wallets" class="px-4 py-2 text-sm font-medium text-primary-600 bg-primary-50 rounded-lg">
+                            Carteiras
+                        </a>
+                        <a href="/admin/security" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
+                            <i class="fas fa-shield-alt mr-1"></i>
+                            Segurança
+                        </a>
+                    </nav>
+                </div>
+                
+                <!-- Botões de ação -->
+                <div class="flex items-center space-x-3">
+                    <a href="/chat" class="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg">
+                        <i class="fas fa-comments"></i>
+                        <span>Acessar Chat</span>
+                    </a>
+                    <a href="/dashboard" class="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg border border-gray-300">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="/auth/logout" class="flex items-center space-x-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Sair</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Page Header -->
+        <div class="md:flex md:items-center md:justify-between mb-8">
+            <div class="flex-1 min-w-0">
+                <h2 class="text-2xl font-bold text-gray-900">Administração de Carteiras</h2>
+                <p class="mt-1 text-sm text-gray-500">Gerencie as carteiras de assistentes disponíveis para os usuários</p>
+            </div>
+            <div class="mt-4 flex md:mt-0 md:ml-4">
+                <button onclick="openCreateWalletModal()" class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    <i class="fas fa-plus mr-2"></i>
+                    Criar Carteira
+                </button>
+            </div>
+        </div>
+
+        <!-- Wallets Grid -->
+        <div id="walletsList" class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <!-- Lista de carteiras será carregada aqui -->
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="hidden">
+            <div class="flex flex-col items-center justify-center py-12">
+                <svg class="animate-spin h-12 w-12 text-primary-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <p class="text-gray-500">Carregando carteiras...</p>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Modal Criar/Editar Carteira -->
+<div id="walletModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+    <div class="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-xl bg-white">
+        <div class="flex justify-between items-center mb-6">
+            <h3 id="walletModalTitle" class="text-xl font-semibold text-gray-900">Criar Nova Carteira</h3>
+            <button onclick="closeWalletModal()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <form id="walletForm" class="space-y-6">
+            <input type="hidden" id="walletId">
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Nome da Carteira</label>
+                <input type="text" id="walletName" required
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
+                <textarea id="walletDescription" rows="3"
+                          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"></textarea>
+            </div>
+            
+            <div class="flex justify-end space-x-3 pt-4 border-t">
+                <button type="button" onclick="closeWalletModal()"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg">
+                    Cancelar
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg">
+                    <span id="walletSubmitButtonText">Criar Carteira</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Gerenciar Assistentes -->
+<div id="assistantsModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+    <div class="relative top-10 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-xl bg-white">
+        <div class="flex justify-between items-center mb-6">
+            <h3 id="assistantsModalTitle" class="text-xl font-semibold text-gray-900">Gerenciar Assistentes</h3>
+            <button onclick="closeAssistantsModal()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Assistentes Disponíveis -->
+            <div>
+                <h4 class="text-lg font-medium text-gray-900 mb-4">Assistentes Disponíveis</h4>
+                <div class="border border-gray-200 rounded-lg p-4 max-h-96 overflow-y-auto">
+                    <div class="mb-4">
+                        <input type="text" id="searchAvailableAssistants" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                               placeholder="Buscar assistentes...">
+                    </div>
+                    <div id="availableAssistantsList" class="space-y-2">
+                        <!-- Lista será carregada dinamicamente -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Assistentes na Carteira -->
+            <div>
+                <h4 class="text-lg font-medium text-gray-900 mb-4">Assistentes na Carteira</h4>
+                <div class="border border-gray-200 rounded-lg p-4 max-h-96 overflow-y-auto">
+                    <div id="walletAssistantsList" class="space-y-2">
+                        <!-- Lista será carregada dinamicamente -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alerts/Toasts -->
+<div id="alertContainer" class="fixed top-4 right-4 z-50 space-y-2">
+    <!-- Alerts serão adicionados aqui dinamicamente -->
+</div>
+
+<script>
+    let currentWalletId = null;
+    let allAssistants = [];
+    let walletAssistants = [];
+
+    // Função para mostrar alerta
+    function showAlert(message, type = 'success') {
+        const alertDiv = document.createElement('div');
+        const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
+        const icon = type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle';
+        
+        alertDiv.className = `${bgColor} text-white px-6 py-4 rounded-lg shadow-lg flex items-center space-x-3`;
+        alertDiv.innerHTML = `
+            <i class="fas fa-${icon}"></i>
+            <span>${message}</span>
+        `;
+        
+        document.getElementById('alertContainer').appendChild(alertDiv);
+        
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 5000);
+    }
+
+    // Carregar carteiras
+    async function loadWallets() {
+        document.getElementById('loadingState').classList.remove('hidden');
+        
+        try {
+            const response = await fetch('/admin/api/wallets');
+            const data = await response.json();
+            
+            if (data.wallets) {
+                renderWallets(data.wallets);
+            }
+        } catch (error) {
+            showAlert('Erro ao carregar carteiras', 'error');
+        } finally {
+            document.getElementById('loadingState').classList.add('hidden');
+        }
+    }
+
+    // Renderizar carteiras
+    function renderWallets(wallets) {
+        const container = document.getElementById('walletsList');
+        container.innerHTML = '';
+        
+        if (wallets.length === 0) {
+            container.innerHTML = `
+                <div class="col-span-full text-center py-12">
+                    <i class="fas fa-wallet text-6xl text-gray-300 mb-4"></i>
+                    <p class="text-gray-500">Nenhuma carteira encontrada</p>
+                </div>
+            `;
+            return;
+        }
+        
+        wallets.forEach(wallet => {
+            const card = document.createElement('div');
+            card.className = 'bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow';
+            
+            const createdDate = wallet.created_at ? new Date(wallet.created_at * 1000).toLocaleDateString('pt-BR') : 'N/A';
+            
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex-1">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-1">${wallet.name}</h3>
+                        <p class="text-sm text-gray-500 mb-2">${wallet.description || 'Sem descrição'}</p>
+                        <div class="flex items-center space-x-4 text-xs text-gray-400">
+                            <span><i class="fas fa-calendar mr-1"></i> ${createdDate}</span>
+                            <span><i class="fas fa-user mr-1"></i> ${wallet.created_by_username || 'Sistema'}</span>
+                        </div>
+                    </div>
+                    <div class="flex space-x-2 ml-4">
+                        <button onclick="manageWalletAssistants(${wallet.id}, '${wallet.name}')" 
+                                class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg" 
+                                title="Gerenciar Assistentes">
+                            <i class="fas fa-cogs"></i>
+                        </button>
+                        <button onclick="editWallet(${wallet.id})" 
+                                class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg" 
+                                title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteWallet(${wallet.id})" 
+                                class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg" 
+                                title="Excluir">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            container.appendChild(card);
+        });
+    }
+
+    // Abrir modal de criação
+    function openCreateWalletModal() {
+        document.getElementById('walletModalTitle').textContent = 'Criar Nova Carteira';
+        document.getElementById('walletSubmitButtonText').textContent = 'Criar Carteira';
+        document.getElementById('walletForm').reset();
+        document.getElementById('walletId').value = '';
+        document.getElementById('walletModal').classList.remove('hidden');
+    }
+
+    // Fechar modal de carteira
+    function closeWalletModal() {
+        document.getElementById('walletModal').classList.add('hidden');
+    }
+
+    // Editar carteira
+    async function editWallet(walletId) {
+        try {
+            const response = await fetch(`/admin/api/wallets/${walletId}`);
+            const wallet = await response.json();
+            
+            if (response.ok) {
+                document.getElementById('walletModalTitle').textContent = 'Editar Carteira';
+                document.getElementById('walletSubmitButtonText').textContent = 'Salvar Alterações';
+                document.getElementById('walletId').value = wallet.id;
+                document.getElementById('walletName').value = wallet.name;
+                document.getElementById('walletDescription').value = wallet.description || '';
+                document.getElementById('walletModal').classList.remove('hidden');
+            } else {
+                showAlert(wallet.error || 'Erro ao carregar carteira', 'error');
+            }
+        } catch (error) {
+            showAlert('Erro ao carregar carteira', 'error');
+        }
+    }
+
+    // Excluir carteira
+    async function deleteWallet(walletId) {
+        if (!confirm('Tem certeza que deseja excluir esta carteira?')) {
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/admin/api/wallets/${walletId}`, {
+                method: 'DELETE'
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                showAlert('Carteira excluída com sucesso!', 'success');
+                loadWallets();
+            } else {
+                showAlert(data.error || 'Erro ao excluir carteira', 'error');
+            }
+        } catch (error) {
+            showAlert('Erro ao excluir carteira', 'error');
+        }
+    }
+
+    // Gerenciar assistentes da carteira
+    async function manageWalletAssistants(walletId, walletName) {
+        currentWalletId = walletId;
+        document.getElementById('assistantsModalTitle').textContent = `Gerenciar Assistentes - ${walletName}`;
+        
+        // Carregar assistentes disponíveis e da carteira
+        await Promise.all([
+            loadAllAssistants(),
+            loadWalletAssistants(walletId)
+        ]);
+        
+        document.getElementById('assistantsModal').classList.remove('hidden');
+    }
+
+    // Fechar modal de assistentes
+    function closeAssistantsModal() {
+        document.getElementById('assistantsModal').classList.add('hidden');
+        currentWalletId = null;
+    }
+
+    // Carregar todos os assistentes
+    async function loadAllAssistants() {
+        try {
+            const response = await fetch('/admin/list-assistants?limit=1000');
+            const data = await response.json();
+            
+            if (data.assistants) {
+                allAssistants = data.assistants;
+                renderAvailableAssistants();
+            }
+        } catch (error) {
+            showAlert('Erro ao carregar assistentes', 'error');
+        }
+    }
+
+    // Carregar assistentes da carteira
+    async function loadWalletAssistants(walletId) {
+        try {
+            const response = await fetch(`/admin/api/wallets/${walletId}/assistants`);
+            const data = await response.json();
+            
+            if (data.assistants) {
+                walletAssistants = data.assistants;
+                renderWalletAssistants();
+            }
+        } catch (error) {
+            showAlert('Erro ao carregar assistentes da carteira', 'error');
+        }
+    }
+
+    // Renderizar assistentes disponíveis
+    function renderAvailableAssistants() {
+        const container = document.getElementById('availableAssistantsList');
+        const searchTerm = document.getElementById('searchAvailableAssistants').value.toLowerCase();
+        
+        // Filtrar assistentes que não estão na carteira
+        const walletAssistantIds = walletAssistants.map(wa => wa.assistant_id);
+        const availableAssistants = allAssistants.filter(assistant => 
+            !walletAssistantIds.includes(assistant.id) &&
+            (assistant.name.toLowerCase().includes(searchTerm) || 
+             assistant.id.toLowerCase().includes(searchTerm))
+        );
+        
+        container.innerHTML = '';
+        
+        if (availableAssistants.length === 0) {
+            container.innerHTML = '<p class="text-gray-500 text-sm">Nenhum assistente disponível</p>';
+            return;
+        }
+        
+        availableAssistants.forEach(assistant => {
+            const item = document.createElement('div');
+            item.className = 'flex items-center justify-between p-2 border border-gray-200 rounded-lg hover:bg-gray-50';
+            
+            item.innerHTML = `
+                <div class="flex-1">
+                    <div class="text-sm font-medium text-gray-900">${assistant.name}</div>
+                    <div class="text-xs text-gray-500">${assistant.id}</div>
+                </div>
+                <button onclick="addAssistantToWallet('${assistant.id}')" 
+                        class="px-3 py-1 text-xs bg-primary-600 text-white rounded hover:bg-primary-700">
+                    Adicionar
+                </button>
+            `;
+            
+            container.appendChild(item);
+        });
+    }
+
+    // Renderizar assistentes da carteira
+    function renderWalletAssistants() {
+        const container = document.getElementById('walletAssistantsList');
+        container.innerHTML = '';
+        
+        if (walletAssistants.length === 0) {
+            container.innerHTML = '<p class="text-gray-500 text-sm">Nenhum assistente na carteira</p>';
+            return;
+        }
+        
+        walletAssistants.forEach(assistant => {
+            const item = document.createElement('div');
+            item.className = 'flex items-center justify-between p-2 border border-gray-200 rounded-lg hover:bg-gray-50';
+            
+            item.innerHTML = `
+                <div class="flex-1">
+                    <div class="text-sm font-medium text-gray-900">${assistant.name}</div>
+                    <div class="text-xs text-gray-500">${assistant.assistant_id}</div>
+                </div>
+                <button onclick="removeAssistantFromWallet('${assistant.assistant_id}')" 
+                        class="px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700">
+                    Remover
+                </button>
+            `;
+            
+            container.appendChild(item);
+        });
+    }
+
+    // Adicionar assistente à carteira
+    async function addAssistantToWallet(assistantId) {
+        try {
+            const response = await fetch(`/admin/api/wallets/${currentWalletId}/assistants`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ assistant_id: assistantId })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                showAlert('Assistente adicionado à carteira!', 'success');
+                await loadWalletAssistants(currentWalletId);
+                renderAvailableAssistants();
+            } else {
+                showAlert(data.error || 'Erro ao adicionar assistente', 'error');
+            }
+        } catch (error) {
+            showAlert('Erro ao adicionar assistente', 'error');
+        }
+    }
+
+    // Remover assistente da carteira
+    async function removeAssistantFromWallet(assistantId) {
+        try {
+            const response = await fetch(`/admin/api/wallets/${currentWalletId}/assistants/${assistantId}`, {
+                method: 'DELETE'
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                showAlert('Assistente removido da carteira!', 'success');
+                await loadWalletAssistants(currentWalletId);
+                renderAvailableAssistants();
+            } else {
+                showAlert(data.error || 'Erro ao remover assistente', 'error');
+            }
+        } catch (error) {
+            showAlert('Erro ao remover assistente', 'error');
+        }
+    }
+
+    // Submeter formulário de carteira
+    document.getElementById('walletForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const walletId = document.getElementById('walletId').value;
+        const isEdit = !!walletId;
+        
+        const formData = {
+            name: document.getElementById('walletName').value,
+            description: document.getElementById('walletDescription').value
+        };
+        
+        try {
+            const url = isEdit 
+                ? `/admin/api/wallets/${walletId}`
+                : '/admin/api/wallets';
+                
+            const response = await fetch(url, {
+                method: isEdit ? 'PUT' : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                showAlert(isEdit ? 'Carteira atualizada com sucesso!' : 'Carteira criada com sucesso!', 'success');
+                closeWalletModal();
+                loadWallets();
+            } else {
+                showAlert(data.error || 'Erro ao salvar carteira', 'error');
+            }
+        } catch (error) {
+            showAlert('Erro ao salvar carteira', 'error');
+        }
+    });
+
+    // Filtro de pesquisa para assistentes disponíveis
+    document.getElementById('searchAvailableAssistants').addEventListener('input', function() {
+        renderAvailableAssistants();
+    });
+
+    // Carregar carteiras ao iniciar
+    document.addEventListener('DOMContentLoaded', loadWallets);
+</script>
+{% endblock %} 

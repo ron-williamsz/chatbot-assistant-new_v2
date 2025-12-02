@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Serviço de Transcrição</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://storage.googleapis.com/chipp-chat-widget-assets/build/bundle.css" />
+
+    <script>
+        function updateFileName(input) {
+            const fileText = document.getElementById('fileText');
+            if (input.files && input.files[0]) {
+                const fileName = input.files[0].name;
+                fileText.innerHTML = `Arquivo selecionado: ${fileName}`;
+                fileText.style.color = '#4299e1';
+            } else {
+                fileText.innerHTML = 'Escolha um arquivo de áudio';
+                fileText.style.color = '#4a5568';
+            }
+        }
+
+        function showProcessing() {
+            document.getElementById('statusContainer').innerHTML = `
+                <div class="processing-container">
+                    <p class="processing-text">Processando seu arquivo...</p>
+                    <div class="typewriter">
+                        <div class="slide"><i></i></div>
+                        <div class="paper"></div>
+                        <div class="keyboard"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Script para compatibilidade com métodos antigos de autenticação
+        document.addEventListener('DOMContentLoaded', function() {
+            // Verifica se estamos em um iframe
+            if (window.self !== window.top) {
+                // Procura por api_key na URL para compatibilidade legada
+                const urlParams = new URLSearchParams(window.location.search);
+                const apiKey = urlParams.get('api_key');
+                
+                if (apiKey) {
+                    // Armazena a chave API no localStorage para uso em solicitações AJAX futuras
+                    localStorage.setItem('api_key', apiKey);
+                    console.log('API key salva do parâmetro URL para compatibilidade legada');
+                    
+                    // Remove a chave da URL visível (mais seguro)
+                    if (history.replaceState) {
+                        const newUrl = window.location.href.replace(/[\?&]api_key=[^&]+/, '');
+                        history.replaceState({}, document.title, newUrl);
+                    }
+                }
+            }
+            
+            // Escutar mensagens do iframe parent (para comunicação entre janelas)
+            window.addEventListener('message', function(event) {
+                console.log('Mensagem recebida via postMessage:', event.data);
+                
+                // Verificar se a mensagem tem o formato esperado
+                if (event.data && event.data.type === 'setApiKey') {
+                    const apiKey = event.data.apiKey;
+                    const method = event.data.method || 'header';
+                    
+                    if (apiKey) {
+                        // Armazenar a chave API
+                        localStorage.setItem('api_key', apiKey);
+                        localStorage.setItem('api_key_method', method);
+                        console.log(`API key recebida via postMessage. Método: ${method}`);
+                        
+                        // Recarregar a página para aplicar a nova chave API
+                        window.location.reload();
+                    }
+                }
+            });
+        });
+
+        // Função para adicionar o cabeçalho de API key em requisições Ajax
+        function addApiKeyHeader(xhr) {
+            const apiKey = localStorage.getItem('api_key');
+            const method = localStorage.getItem('api_key_method') || 'header';
+            
+            if (apiKey) {
+                if (method === 'bearer') {
+                    xhr.setRequestHeader('Authorization', `Bearer ${apiKey}`);
+                } else {
+                    xhr.setRequestHeader('X-API-Key', apiKey);
+                }
+                console.log(`API key adicionada ao cabeçalho: ${method}`);
+            } else {
+                console.warn('Nenhuma API key encontrada no localStorage');
+            }
+        }
+        
+        // Verifica e relata problemas de autenticação
+        function checkAuthStatus() {
+            if (!localStorage.getItem('api_key')) {
+                console.warn('Atenção: Nenhuma API key configurada. Autenticação pode falhar.');
+                
+                // Adicionar aviso na interface apenas se não estiver em um iframe
+                if (window.self === window.top) {
+                    const warningDiv = document.createElement('div');
+                    warningDiv.style.color = 'red';
+                    warningDiv.style.padding = '10px';
+                    warningDiv.style.marginBottom = '10px';
+                    warningDiv.style.backgroundColor = '#ffeeee';
+                    warningDiv.style.border = '1px solid #ff0000';
+                    warningDiv.style.borderRadius = '5px';
+                    warningDiv.innerHTML = '<strong>Atenção:</strong> API key não configurada. A autenticação pode falhar.';
+                    
+                    const container = document.querySelector('.main-content');
+                    if (container && container.firstChild) {
+                        container.insertBefore(warningDiv, container.firstChild);
+                    }
+                }
+            }
+        }
+        
+        // Executar na inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuthStatus();
+        });
+
+        function downloadFile(filename, type) {
+            // Obter a API key para incluir na URL
+            const apiKey = localStorage.getItem('api_key') || 'zangari_solucoes_2024';
+            
+            // Criar URL com a API key como parâmetro
+            let downloadUrl = '/download/' + filename + '?api_key=' + apiKey;
+            
+            // Abrir em nova aba ou redirecionar
+            window.location.href = downloadUrl;
+            return false;
+        }
+
+        function reiniciarTranscricao() {
+            // Obter a API key
+            const apiKey = localStorage.getItem('api_key') || 'zangari_solucoes_2024';
+            
+            // Redirecionar para a página inicial com a API key
+            window.location.href = '/?api_key=' + apiKey;
+        }
+
+        function checkStatus() {
+            const taskId = '{{ task_id }}';
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', '/status/' + taskId);
+            addApiKeyHeader(xhr);
+            
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    console.log('Status da task:', response);
+                    
+                    if (response.state === 'SUCCESS') {
+                        document.getElementById('statusContainer').style.display = 'none';
+                        
+                        if (response.result) {
+                            document.getElementById('resultContainer').style.display = 'block';
+                            
+                            const docxLink = document.getElementById('docxLink');
+                            
+                            // Verificar se docx está disponível
+                            if (response.result.docx) {
+                                docxLink.setAttribute('data-file', response.result.docx);
+                                docxLink.style.display = 'inline-block';
+                                
+                                // Salvar o task_id no localStorage para nova tentativa
+                                localStorage.setItem('last_successful_task', '{{ task_id }}');
+                                localStorage.setItem('last_docx_file', response.result.docx);
+                            } else {
+                                docxLink.style.display = 'none';
+                            }
+                        } else {
+                            // Resultado vazio - mostrar erro
+                            showError('Não foi possível obter o resultado da transcrição.');
+                        }
+                    } else if (response.state === 'FAILURE') {
+                        showError(response.error || 'Ocorreu um erro desconhecido durante o processamento.');
+                    } else {
+                        document.getElementById('statusMessage').textContent = 'Status: ' + (response.status || response.state);
+                        // Continuar verificando o status
+                        setTimeout(checkStatus, 2000);
+                    }
+                } else {
+                    showError('Erro ao verificar status da transcrição. Código: ' + xhr.status);
+                }
+            };
+            
+            xhr.onerror = function() {
+                showError('Erro de conexão ao verificar status da transcrição.');
+            };
+            
+            xhr.send();
+        }
+        
+        function showError(message) {
+            document.getElementById('statusContainer').style.display = 'none';
+            document.getElementById('errorContainer').style.display = 'block';
+            document.getElementById('errorMessage').textContent = message;
+        }
+        
+        // Inicia a verificação de status e mostra a animação
+        setTimeout(() => {
+            checkStatus();
+        }, 1000);
+    </script>
+</head>
+<body>
+    <div class="page-container">
+        <div class="content-wrapper">
+            <header>
+                <img src="{{ url_for('static', filename='header_image.png') }}" alt="Header Image" class="header-image">
+                <h1>Serviço de Transcrição de Áudio</h1>
+                <p class="subtitle">Transforme seu áudio em texto de forma rápida e precisa</p>
+            </header>
+
+            <main class="main-content">
+                {% if error %}
+                <div class="error">
+                    <p>{{ error }}</p>
+                </div>
+                {% endif %}
+                
+                {% if task_id %}
+                <div id="statusContainer" class="status-container">
+                    <p>Processando arquivo...</p>
+                    <div class="loader"></div>
+                    <p id="statusMessage">Status: Processando...</p>
+                </div>
+                <div id="resultContainer" style="display: none;">
+                    <p>Transcrição concluída! Faça o download do arquivo:</p>
+                    <div class="download-links">
+                        <a id="docxLink" href="#" class="download-btn" onclick="downloadFile(this.getAttribute('data-file'), 'docx'); return false;">Baixar DOCX</a>
+                    </div>
+                    <div class="new-transcription">
+                        <a href="javascript:void(0)" onclick="reiniciarTranscricao()" class="new-transcription-button">Iniciar uma nova transcrição</a>
+                    </div>
+                </div>
+                <div id="errorContainer" style="display: none;">
+                    <p class="error-text">Ocorreu um erro durante o processamento:</p>
+                    <p id="errorMessage" class="error-detail"></p>
+                    <div class="new-transcription">
+                        <a href="javascript:void(0)" onclick="reiniciarTranscricao()" class="new-transcription-button">Tentar novamente</a>
+                    </div>
+                </div>
+                <script>
+                    function reiniciarTranscricao() {
+                        // Obter a API key
+                        const apiKey = localStorage.getItem('api_key') || 'zangari_solucoes_2024';
+                        
+                        // Redirecionar para a página inicial com a API key
+                        window.location.href = '/?api_key=' + apiKey;
+                    }
+                    
+                    function checkStatus() {
+                        const taskId = '{{ task_id }}';
+                        const xhr = new XMLHttpRequest();
+                        xhr.open('GET', '/status/' + taskId);
+                        addApiKeyHeader(xhr);
+                        
+                        xhr.onload = function() {
+                            if (xhr.status === 200) {
+                                const response = JSON.parse(xhr.responseText);
+                                console.log('Status da task:', response);
+                                
+                                if (response.state === 'SUCCESS') {
+                                    document.getElementById('statusContainer').style.display = 'none';
+                                    
+                                    if (response.result) {
+                                        document.getElementById('resultContainer').style.display = 'block';
+                                        
+                                        const docxLink = document.getElementById('docxLink');
+                                        
+                                        // Verificar se docx está disponível
+                                        if (response.result.docx) {
+                                            docxLink.setAttribute('data-file', response.result.docx);
+                                            docxLink.style.display = 'inline-block';
+                                            
+                                            // Salvar o task_id no localStorage para nova tentativa
+                                            localStorage.setItem('last_successful_task', '{{ task_id }}');
+                                            localStorage.setItem('last_docx_file', response.result.docx);
+                                        } else {
+                                            docxLink.style.display = 'none';
+                                        }
+                                    } else {
+                                        // Resultado vazio - mostrar erro
+                                        showError('Não foi possível obter o resultado da transcrição.');
+                                    }
+                                } else if (response.state === 'FAILURE') {
+                                    showError(response.error || 'Ocorreu um erro desconhecido durante o processamento.');
+                                } else {
+                                    document.getElementById('statusMessage').textContent = 'Status: ' + (response.status || response.state);
+                                    // Continuar verificando o status
+                                    setTimeout(checkStatus, 2000);
+                                }
+                            } else {
+                                showError('Erro ao verificar status da transcrição. Código: ' + xhr.status);
+                            }
+                        };
+                        
+                        xhr.onerror = function() {
+                            showError('Erro de conexão ao verificar status da transcrição.');
+                        };
+                        
+                        xhr.send();
+                    }
+                    
+                    function showError(message) {
+                        document.getElementById('statusContainer').style.display = 'none';
+                        document.getElementById('errorContainer').style.display = 'block';
+                        document.getElementById('errorMessage').textContent = message;
+                    }
+                    
+                    // Inicia a verificação de status e mostra a animação
+                    setTimeout(() => {
+                        checkStatus();
+                    }, 1000);
+                </script>
+                {% else %}
+                <form action="/" method="post" enctype="multipart/form-data" id="uploadForm">
+                    <div class="file-upload">
+                        <input type="file" name="file" id="fileInput" accept="audio/*,video/*" required onchange="updateSelectedFile(this)">
+                        <label for="fileInput">Selecione um arquivo de áudio</label>
+                        <div id="selectedFileName" class="selected-file-name"></div>
+                    </div>
+                    <button type="submit" class="submit-btn" onclick="showProcessingOnSubmit()">Transcrever</button>
+                </form>
+                <script>
+                    function updateSelectedFile(input) {
+                        const selectedFileNameElem = document.getElementById('selectedFileName');
+                        if (input.files && input.files[0]) {
+                            const fileName = input.files[0].name;
+                            selectedFileNameElem.textContent = `Arquivo selecionado: ${fileName}`;
+                            selectedFileNameElem.classList.add('file-selected');
+                            
+                            // Também mudar o estilo da caixa de upload
+                            input.closest('.file-upload').classList.add('has-file');
+                        } else {
+                            selectedFileNameElem.textContent = '';
+                            selectedFileNameElem.classList.remove('file-selected');
+                            input.closest('.file-upload').classList.remove('has-file');
+                        }
+                    }
+                
+                    function showProcessingOnSubmit() {
+                        // Criar e mostrar o elemento de processamento após o form
+                        const processingDiv = document.createElement('div');
+                        processingDiv.id = 'processingContainer';
+                        processingDiv.className = 'processing-container';
+                        processingDiv.innerHTML = `
+                            <p class="processing-text">Enviando arquivo...</p>
+                            <div class="typewriter">
+                                <div class="slide"><i></i></div>
+                                <div class="paper"></div>
+                                <div class="keyboard"></div>
+                            </div>
+                        `;
+                        
+                        const formElement = document.getElementById('uploadForm');
+                        formElement.style.display = 'none';
+                        formElement.parentNode.insertBefore(processingDiv, formElement.nextSibling);
+                    }
+                
+                    document.getElementById('uploadForm').addEventListener('submit', function(e) {
+                        const formData = new FormData(this);
+                        e.preventDefault();
+                        
+                        // Mostrar animação de processamento
+                        showProcessingOnSubmit();
+                        
+                        const xhr = new XMLHttpRequest();
+                        xhr.open('POST', '/');
+                        addApiKeyHeader(xhr); // Adiciona o cabeçalho de API key
+                        
+                        xhr.onload = function() {
+                            if (xhr.status === 200) {
+                                document.open();
+                                document.write(xhr.responseText);
+                                document.close();
+                            } else if (xhr.status === 401) {
+                                alert('Erro de autenticação: Chave API inválida ou ausente.');
+                                // Remover animação processamento e mostrar form novamente
+                                document.getElementById('processingContainer').remove();
+                                document.getElementById('uploadForm').style.display = 'block';
+                            } else {
+                                alert('Erro ao enviar arquivo: ' + xhr.statusText);
+                                // Remover animação processamento e mostrar form novamente
+                                document.getElementById('processingContainer').remove();
+                                document.getElementById('uploadForm').style.display = 'block';
+                            }
+                        };
+                        
+                        xhr.onerror = function() {
+                            alert('Erro de conexão');
+                            // Remover animação processamento e mostrar form novamente
+                            document.getElementById('processingContainer').remove();
+                            document.getElementById('uploadForm').style.display = 'block';
+                        };
+                        
+                        xhr.send(formData);
+                    });
+                </script>
+                {% endif %}
+            </main>
+        </div>
+    </div>
+</body>
+</html>
+

@@ -1,0 +1,4 @@
+celery -A tasks worker --pool=solo --concurrency=1 --loglevel=info
+
+celery -A tasks worker --pool=solo --concurrency=1 --loglevel=info
+

@@ -1,0 +1,753 @@
+{% extends "base.html" %}
+
+{% block title %}Administração de Assistentes - ZANGARI{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <!-- Logo e Navegação -->
+                <div class="flex items-center space-x-8">
+                    <div class="flex items-center space-x-3">
+                        <i class="fas fa-robot text-2xl text-primary-600"></i>
+                        <h1 class="text-xl font-semibold text-gray-900">ZANGARI Assistente</h1>
+                    </div>
+                    
+                    <!-- Tabs de navegação -->
+                    <nav class="flex space-x-1">
+                        <a href="/admin/assistants" class="px-4 py-2 text-sm font-medium text-primary-600 bg-primary-50 rounded-lg">
+                            Assistentes
+                        </a>
+                        <a href="/admin/users" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
+                            Usuários
+                        </a>
+                        <a href="/admin/wallets" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
+                            Carteiras
+                        </a>
+                        <a href="/admin/security" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg flex items-center">
+                            <i class="fas fa-shield-alt mr-2"></i>
+                            Segurança
+                        </a>
+                    </nav>
+                </div>
+                
+                <!-- Botões de ação -->
+                <div class="flex items-center space-x-3">
+                    <a href="/chat" class="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg">
+                        <i class="fas fa-comments"></i>
+                        <span>Acessar Chat</span>
+                    </a>
+                    <a href="/dashboard" class="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg border border-gray-300">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="/auth/logout" class="flex items-center space-x-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Sair</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Page Header -->
+        <div class="md:flex md:items-center md:justify-between mb-8">
+            <div class="flex-1 min-w-0">
+                <h2 class="text-2xl font-bold text-gray-900">Administração de Assistentes</h2>
+                <p class="mt-1 text-sm text-gray-500">Gerencie os assistentes disponíveis no sistema</p>
+            </div>
+            <div class="mt-4 flex md:mt-0 md:ml-4 space-x-3">
+                <button onclick="syncAssistants()" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    <i class="fas fa-sync-alt mr-2"></i>
+                    Atualizar Assistentes da API
+                </button>
+                <button onclick="openCreateModal()" class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    <i class="fas fa-plus mr-2"></i>
+                Criar Assistente
+            </button>
+            </div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="mb-6">
+            <div class="relative flex">
+                <input type="text" id="searchInput" 
+                       class="flex-1 pl-10 pr-4 py-3 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                       placeholder="Buscar por número ou nome...">
+                <i class="fas fa-search absolute left-3 top-4 text-gray-400"></i>
+                <button onclick="searchAssistants()" 
+                        class="px-4 py-3 bg-primary-600 text-white border border-primary-600 rounded-r-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all">
+                <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Assistants Grid -->
+        <div id="assistantsList" class="grid gap-4">
+            <!-- Lista de assistentes será carregada aqui -->
+        </div>
+
+        <!-- Pagination Controls -->
+        <div id="paginationControls" class="mt-8 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 hidden">
+            <!-- Info sobre resultados -->
+            <div class="flex items-center space-x-4">
+                <div class="text-sm text-gray-700">
+                    <span>Mostrando </span>
+                    <span id="showingFrom" class="font-medium">1</span>
+                    <span> a </span>
+                    <span id="showingTo" class="font-medium">20</span>
+                    <span> de </span>
+                    <span id="totalResults" class="font-medium">100</span>
+                    <span> assistentes</span>
+                </div>
+                
+                <!-- Seletor de itens por página -->
+                <div class="flex items-center space-x-2">
+                    <label for="pageSize" class="text-sm text-gray-700">Por página:</label>
+                    <select id="pageSize" onchange="changePageSize()" 
+                            class="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                        <option value="100" selected>100</option>
+                        <option value="200">200</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Controles de navegação -->
+            <div class="flex items-center space-x-2">
+                <!-- Primeira página -->
+                <button id="firstPageBtn" onclick="goToPage(1)" 
+                        class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-l-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled>
+                    <i class="fas fa-angle-double-left"></i>
+                </button>
+                
+                <!-- Página anterior -->
+                <button id="prevPageBtn" onclick="previousPage()" 
+                        class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border-t border-b border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled>
+                    <i class="fas fa-angle-left"></i>
+                </button>
+                
+                <!-- Números das páginas -->
+                <div id="pageNumbers" class="flex">
+                    <!-- Números serão inseridos dinamicamente -->
+                </div>
+                
+                <!-- Próxima página -->
+                <button id="nextPageBtn" onclick="nextPage()" 
+                        class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border-t border-b border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="fas fa-angle-right"></i>
+                </button>
+                
+                <!-- Última página -->
+                <button id="lastPageBtn" onclick="goToLastPage()" 
+                        class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-r-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="fas fa-angle-double-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="hidden">
+            <div class="flex flex-col items-center justify-center py-12">
+                <svg class="animate-spin h-12 w-12 text-primary-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <p class="text-gray-500">Carregando assistentes...</p>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Modal Criar/Editar Assistente -->
+<div id="assistantModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+    <div class="relative top-10 mx-auto p-5 border w-full max-w-3xl shadow-lg rounded-xl bg-white">
+        <div class="flex justify-between items-center mb-6">
+            <h3 id="modalTitle" class="text-xl font-semibold text-gray-900">Criar Novo Assistente</h3>
+            <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <form id="assistantForm" class="space-y-6">
+            <input type="hidden" id="assistantId">
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Nome do Assistente</label>
+                <input type="text" id="assistantName" required
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
+                <textarea id="assistantDescription" rows="3"
+                          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"></textarea>
+        </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Modelo</label>
+                <select id="assistantModel" required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                    <option value="">Selecione um modelo...</option>
+                                </select>
+                            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Instruções</label>
+                <textarea id="assistantInstructions" rows="6"
+                          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                          placeholder="Digite as instruções para o assistente..."></textarea>
+                            </div>
+            
+            <div class="flex justify-end space-x-3 pt-4 border-t">
+                <button type="button" onclick="closeModal()"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg">
+                    Cancelar
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg">
+                    <span id="submitButtonText">Criar Assistente</span>
+                </button>
+                            </div>
+                        </form>
+                    </div>
+</div>
+
+<!-- Modal Vector Store -->
+<div id="vectorStoreModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-xl bg-white">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-semibold text-gray-900">Gerenciar Vector Store</h3>
+            <button onclick="closeVectorStoreModal()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+                    </div>
+        
+        <div id="vectorStoreContent">
+            <!-- Conteúdo será carregado dinamicamente -->
+                </div>
+            </div>
+        </div>
+
+<!-- Alerts/Toasts -->
+<div id="alertContainer" class="fixed top-4 right-4 z-50 space-y-2">
+    <!-- Alerts serão adicionados aqui dinamicamente -->
+                    </div>
+
+<script>
+    let allAssistants = [];
+    let filteredAssistants = [];
+    let currentPage = 1;
+    let pageSize = 100;
+    let totalAssistants = 0;
+    let totalPages = 0;
+    let isLoading = false;
+
+    // Função para mostrar alerta
+    function showAlert(message, type = 'success') {
+        const alertDiv = document.createElement('div');
+        const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
+        const icon = type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle';
+        
+        alertDiv.className = `${bgColor} text-white px-6 py-4 rounded-lg shadow-lg flex items-center space-x-3`;
+        alertDiv.innerHTML = `
+            <i class="fas fa-${icon}"></i>
+            <span>${message}</span>
+        `;
+        
+        document.getElementById('alertContainer').appendChild(alertDiv);
+        
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 5000);
+    }
+
+    // Função para renderizar assistentes
+    function renderAssistants(assistants) {
+        const container = document.getElementById('assistantsList');
+        container.innerHTML = '';
+        
+        if (assistants.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-12">
+                    <i class="fas fa-robot text-6xl text-gray-300 mb-4"></i>
+                    <p class="text-gray-500">Nenhum assistente encontrado</p>
+                            </div>
+            `;
+            document.getElementById('paginationControls').classList.add('hidden');
+            return;
+        }
+        
+        assistants.forEach(assistant => {
+            const card = document.createElement('div');
+            card.className = 'bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow';
+            
+            card.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-1">${assistant.name || 'Sem nome'}</h3>
+                        <p class="text-sm text-gray-500 mb-3">${assistant.description || 'Sem descrição'}</p>
+                        <div class="flex items-center space-x-4 text-xs text-gray-400">
+                            <span><i class="fas fa-microchip mr-1"></i> ${assistant.model}</span>
+                            <span><i class="fas fa-fingerprint mr-1"></i> ${assistant.id}</span>
+                            </div>
+                    </div>
+                    <div class="flex space-x-2 ml-4">
+                        <button onclick="checkVectorStore('${assistant.id}')" 
+                                class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg" 
+                                title="Vector Store">
+                            <i class="fas fa-database"></i>
+                        </button>
+                        <button onclick="editAssistant('${assistant.id}')" 
+                                class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg" 
+                                title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteAssistant('${assistant.id}')" 
+                                class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg" 
+                                title="Excluir">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            container.appendChild(card);
+        });
+        
+        updatePaginationControls();
+    }
+
+    // Carregar assistentes com paginação
+    async function loadAssistants(page = 1, search = '') {
+        if (isLoading) return;
+        
+        // Validar e corrigir valores
+        page = parseInt(page) || 1;
+        pageSize = parseInt(pageSize) || 100;
+        
+        isLoading = true;
+        document.getElementById('loadingState').classList.remove('hidden');
+        document.getElementById('assistantsList').innerHTML = '';
+        
+        try {
+            const offset = (page - 1) * pageSize;
+            let url = `/admin/list-assistants?limit=${pageSize}&offset=${offset}`;
+            
+            if (search) {
+                url += `&search=${encodeURIComponent(search)}`;
+            }
+            
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if (data.assistants) {
+                allAssistants = data.assistants;
+                totalAssistants = data.total || data.assistants.length;
+                totalPages = Math.ceil(totalAssistants / pageSize);
+                currentPage = page;
+                
+                renderAssistants(allAssistants);
+            }
+        } catch (error) {
+            showAlert('Erro ao carregar assistentes', 'error');
+        } finally {
+            document.getElementById('loadingState').classList.add('hidden');
+            isLoading = false;
+        }
+    }
+
+    // Atualizar controles de paginação
+    function updatePaginationControls() {
+        const paginationControls = document.getElementById('paginationControls');
+        
+        if (totalAssistants === 0) {
+            paginationControls.classList.add('hidden');
+            return;
+        }
+        
+        paginationControls.classList.remove('hidden');
+        
+        // Atualizar informações de resultados
+        const showingFrom = (currentPage - 1) * pageSize + 1;
+        const showingTo = Math.min(currentPage * pageSize, totalAssistants);
+        
+        document.getElementById('showingFrom').textContent = showingFrom;
+        document.getElementById('showingTo').textContent = showingTo;
+        document.getElementById('totalResults').textContent = totalAssistants;
+        
+        // Atualizar botões de navegação
+        const firstPageBtn = document.getElementById('firstPageBtn');
+        const prevPageBtn = document.getElementById('prevPageBtn');
+        const nextPageBtn = document.getElementById('nextPageBtn');
+        const lastPageBtn = document.getElementById('lastPageBtn');
+        
+        firstPageBtn.disabled = currentPage === 1;
+        prevPageBtn.disabled = currentPage === 1;
+        nextPageBtn.disabled = currentPage === totalPages;
+        lastPageBtn.disabled = currentPage === totalPages;
+        
+        // Atualizar números das páginas
+        updatePageNumbers();
+    }
+
+    // Atualizar números das páginas
+    function updatePageNumbers() {
+        const pageNumbers = document.getElementById('pageNumbers');
+        pageNumbers.innerHTML = '';
+        
+        // Calcular quais páginas mostrar
+        let startPage = Math.max(1, currentPage - 2);
+        let endPage = Math.min(totalPages, currentPage + 2);
+        
+        // Ajustar se estivermos no início ou fim
+        if (endPage - startPage < 4) {
+            if (startPage === 1) {
+                endPage = Math.min(totalPages, startPage + 4);
+            } else {
+                startPage = Math.max(1, endPage - 4);
+            }
+        }
+        
+        for (let i = startPage; i <= endPage; i++) {
+            const pageBtn = document.createElement('button');
+            pageBtn.className = `px-3 py-2 text-sm font-medium border-t border-b border-gray-300 ${
+                i === currentPage 
+                    ? 'bg-primary-600 text-white border-primary-600' 
+                    : 'text-gray-500 bg-white hover:bg-gray-50'
+            }`;
+            pageBtn.textContent = i;
+            pageBtn.onclick = () => goToPage(i);
+            
+            pageNumbers.appendChild(pageBtn);
+        }
+    }
+
+    // Funções de navegação
+    function goToPage(page) {
+        if (page >= 1 && page <= totalPages && page !== currentPage) {
+            const searchTerm = document.getElementById('searchInput').value;
+            loadAssistants(page, searchTerm);
+        }
+    }
+
+    function previousPage() {
+        if (currentPage > 1) {
+            goToPage(currentPage - 1);
+        }
+    }
+
+    function nextPage() {
+        if (currentPage < totalPages) {
+            goToPage(currentPage + 1);
+        }
+    }
+
+    function goToLastPage() {
+        goToPage(totalPages);
+    }
+
+    // Alterar tamanho da página
+    function changePageSize() {
+        const newPageSize = parseInt(document.getElementById('pageSize').value);
+        if (newPageSize && newPageSize > 0) {
+            pageSize = newPageSize;
+        } else {
+            pageSize = 100; // Valor padrão
+        }
+        const searchTerm = document.getElementById('searchInput').value;
+        loadAssistants(1, searchTerm); // Voltar para a primeira página
+    }
+
+    // Buscar assistentes
+    document.getElementById('searchInput').addEventListener('input', function(e) {
+        const searchTerm = e.target.value;
+        loadAssistants(1, searchTerm); // Sempre voltar para a primeira página na busca
+    });
+
+    // Função para pesquisar assistentes (chamada pelo botão de lupa)
+    function searchAssistants() {
+        const searchTerm = document.getElementById('searchInput').value;
+        loadAssistants(1, searchTerm);
+    }
+
+    // Permitir pesquisa com Enter
+    document.getElementById('searchInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            searchAssistants();
+        }
+    });
+
+    // Sincronizar assistentes
+    async function syncAssistants() {
+        showAlert('Sincronizando assistentes...', 'info');
+        
+        try {
+            const response = await fetch('/admin/sync-assistants', { method: 'POST' });
+            const data = await response.json();
+            
+            if (response.ok) {
+                showAlert(data.message, 'success');
+                loadAssistants();
+            } else {
+                showAlert(data.error || 'Erro ao sincronizar', 'error');
+            }
+        } catch (error) {
+            showAlert('Erro ao sincronizar assistentes', 'error');
+        }
+    }
+
+    // Abrir modal de criação
+    function openCreateModal() {
+        document.getElementById('modalTitle').textContent = 'Criar Novo Assistente';
+        document.getElementById('submitButtonText').textContent = 'Criar Assistente';
+        document.getElementById('assistantForm').reset();
+        document.getElementById('assistantId').value = '';
+        document.getElementById('assistantModal').classList.remove('hidden');
+        loadModels();
+    }
+
+    // Fechar modal
+    function closeModal() {
+        document.getElementById('assistantModal').classList.add('hidden');
+    }
+
+    // Carregar modelos disponíveis
+    async function loadModels() {
+        try {
+            const response = await fetch('/admin/get-models');
+            const data = await response.json();
+            
+            if (data.models) {
+                const select = document.getElementById('assistantModel');
+                select.innerHTML = '<option value="">Selecione um modelo...</option>';
+                
+                // Filtrar apenas modelos GPT
+                const gptModels = data.models.filter(model => model.id.includes('gpt'));
+                
+                gptModels.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model.id;
+                    option.textContent = model.id;
+                    select.appendChild(option);
+                });
+            }
+        } catch (error) {
+            showAlert('Erro ao carregar modelos', 'error');
+        }
+    }
+
+    // Função para verificar Vector Store
+    async function checkVectorStore(assistantId) {
+        try {
+            const response = await fetch(`/admin/check-vector-store/${assistantId}`);
+            const data = await response.json();
+            
+            const content = document.getElementById('vectorStoreContent');
+            
+            if (data.hasVectorStore) {
+                content.innerHTML = `
+                    <div class="text-center">
+                        <i class="fas fa-check-circle text-green-500 text-5xl mb-4"></i>
+                        <p class="text-lg mb-2">Este assistente já possui um Vector Store</p>
+                        <p class="text-sm text-gray-600">ID: ${data.vectorStoreId}</p>
+                        <p class="text-sm text-gray-600">Nome: ${data.vectorStoreName}</p>
+                        
+                        <div class="mt-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Fazer upload de arquivos:</label>
+                            <input type="file" id="vectorFiles" multiple class="mb-4">
+                            <button onclick="uploadToVectorStore('${data.vectorStoreId}')" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">
+                                Upload de Arquivos
+                            </button>
+            </div>
+        </div>
+                `;
+            } else {
+                content.innerHTML = `
+                    <div class="text-center">
+                        <i class="fas fa-times-circle text-red-500 text-5xl mb-4"></i>
+                        <p class="text-lg mb-4">Este assistente não possui um Vector Store</p>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Nome do Vector Store:</label>
+                            <input type="text" id="vectorStoreName" class="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4" 
+                                   placeholder="Digite o nome do Vector Store">
+                            <button onclick="createVectorStore('${assistantId}')" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">
+                                Criar Vector Store
+                            </button>
+                        </div>
+    </div>
+                `;
+            }
+            
+            document.getElementById('vectorStoreModal').classList.remove('hidden');
+        } catch (error) {
+            showAlert('Erro ao verificar Vector Store', 'error');
+        }
+    }
+    
+    // Fechar modal do Vector Store
+    function closeVectorStoreModal() {
+        document.getElementById('vectorStoreModal').classList.add('hidden');
+    }
+    
+    // Criar Vector Store
+    async function createVectorStore(assistantId) {
+        const name = document.getElementById('vectorStoreName').value;
+        
+        if (!name) {
+            showAlert('Por favor, digite um nome para o Vector Store', 'error');
+            return;
+        }
+        
+        try {
+            const response = await fetch('/admin/create-vector-store', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, assistantId })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                showAlert('Vector Store criado com sucesso!', 'success');
+                closeVectorStoreModal();
+            } else {
+                showAlert(data.error || 'Erro ao criar Vector Store', 'error');
+            }
+        } catch (error) {
+            showAlert('Erro ao criar Vector Store', 'error');
+        }
+    }
+    
+    // Upload de arquivos para Vector Store
+    async function uploadToVectorStore(vectorStoreId) {
+        const files = document.getElementById('vectorFiles').files;
+        
+        if (files.length === 0) {
+            showAlert('Por favor, selecione pelo menos um arquivo', 'error');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('vectorStoreId', vectorStoreId);
+        
+        for (let i = 0; i < files.length; i++) {
+            formData.append('files', files[i]);
+        }
+        
+        try {
+            showAlert('Fazendo upload dos arquivos...', 'info');
+            
+            const response = await fetch('/admin/upload-files', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                showAlert('Arquivos enviados com sucesso!', 'success');
+                closeVectorStoreModal();
+            } else {
+                showAlert(data.error || 'Erro ao enviar arquivos', 'error');
+            }
+        } catch (error) {
+            showAlert('Erro ao enviar arquivos', 'error');
+        }
+    }
+
+    // Editar assistente
+    function editAssistant(assistantId) {
+        const assistant = allAssistants.find(a => a.id === assistantId);
+        
+        if (!assistant) return;
+        
+        document.getElementById('modalTitle').textContent = 'Editar Assistente';
+        document.getElementById('submitButtonText').textContent = 'Salvar Alterações';
+        document.getElementById('assistantId').value = assistant.id;
+        document.getElementById('assistantName').value = assistant.name || '';
+        document.getElementById('assistantDescription').value = assistant.description || '';
+        document.getElementById('assistantInstructions').value = assistant.instructions || '';
+        
+        document.getElementById('assistantModal').classList.remove('hidden');
+        loadModels().then(() => {
+            document.getElementById('assistantModel').value = assistant.model;
+        });
+    }
+
+    // Excluir assistente
+    async function deleteAssistant(assistantId) {
+        if (!confirm('Tem certeza que deseja excluir este assistente?')) {
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/admin/delete-assistant/${assistantId}`, {
+                method: 'DELETE'
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                showAlert('Assistente excluído com sucesso!', 'success');
+                loadAssistants();
+            } else {
+                showAlert(data.error || 'Erro ao excluir assistente', 'error');
+            }
+        } catch (error) {
+            showAlert('Erro ao excluir assistente', 'error');
+        }
+    }
+
+    // Submeter formulário de assistente
+    document.getElementById('assistantForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const assistantId = document.getElementById('assistantId').value;
+        const isEdit = !!assistantId;
+        
+        const formData = {
+            name: document.getElementById('assistantName').value,
+            description: document.getElementById('assistantDescription').value,
+            model: document.getElementById('assistantModel').value,
+            instructions: document.getElementById('assistantInstructions').value,
+            tools: []
+        };
+        
+        try {
+            const url = isEdit 
+                ? `/admin/modify-assistant/${assistantId}`
+                : '/admin/create-assistant';
+                
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                showAlert(isEdit ? 'Assistente atualizado com sucesso!' : 'Assistente criado com sucesso!', 'success');
+                closeModal();
+                loadAssistants();
+            } else {
+                showAlert(data.error || 'Erro ao salvar assistente', 'error');
+            }
+        } catch (error) {
+            showAlert('Erro ao salvar assistente', 'error');
+        }
+    });
+
+    // Carregar assistentes ao iniciar
+    document.addEventListener('DOMContentLoaded', loadAssistants);
+</script>
+{% endblock %} 

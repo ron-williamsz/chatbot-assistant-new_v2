@@ -1,0 +1,8 @@
+Para adicionar o logo da empresa:
+
+1. Nomeie o arquivo do logo como "logo.png" (preferencialmente em formato PNG com fundo transparente)
+2. Dimensões recomendadas: 200x50 pixels ou proporcional
+3. Coloque o arquivo neste diretório: app/static/images/
+4. O template HTML já está configurado para exibir o logo
+
+Outros formatos suportados: .jpg, .svg 

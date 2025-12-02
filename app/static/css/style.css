@@ -1,0 +1,216 @@
+.message-user {
+    background-color: #e9ecef;
+    padding: 10px 15px;
+    border-radius: 15px;
+    margin: 5px 0;
+    max-width: 80%;
+    margin-left: auto;
+}
+
+.message-bot {
+    background-color: #f8f9fa;
+    padding: 10px 15px;
+    border-radius: 15px;
+    margin: 5px 0;
+    max-width: 80%;
+}
+
+.typing-indicator::after {
+    content: '';
+    animation: typing 1.4s infinite;
+}
+
+@keyframes typing {
+    0%, 100% { content: ''; }
+    25% { content: '.'; }
+    50% { content: '..'; }
+    75% { content: '...'; }
+}
+
+#chat div {
+    margin-bottom: 15px;
+}
+
+.config-panel {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+}
+
+.config-panel.open {
+    max-height: 200px;
+    margin-bottom: 20px;
+    padding: 15px;
+    border: 1px solid #dee2e6;
+}
+
+#loadingSpinner {
+    position: relative;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* Estilos para os modais */
+.modal-dialog {
+    max-height: 90vh;
+}
+
+.modal-content {
+    max-height: 90vh;
+}
+
+.modal-body {
+    overflow-y: auto;
+    max-height: calc(90vh - 120px); /* Altura total menos header e footer */
+    padding: 1rem;
+}
+
+/* Estilizar a barra de rolagem */
+.modal-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Estilos para a lista de assistentes */
+#assistantList {
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+/* Ajuste para o formulário dentro do modal */
+#createAssistantForm {
+    padding-right: 5px; /* Espaço para a barra de rolagem */
+}
+
+/* Estilos para o fluxo guiado */
+.upload-control {
+    margin: 15px 0;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    background-color: #f8f9fa;
+}
+
+.dropzone {
+    border: 2px dashed #007bff;
+    border-radius: 5px;
+    padding: 30px;
+    text-align: center;
+    cursor: pointer;
+    background-color: #f1f8ff;
+    transition: all 0.3s;
+}
+
+.dropzone i {
+    font-size: 2em;
+    margin-bottom: 10px;
+    color: #007bff;
+}
+
+.dropzone.dragover {
+    background-color: #e1f0ff;
+    border-color: #0056b3;
+}
+
+.file-list {
+    margin-top: 15px;
+}
+
+.file-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 10px;
+    background-color: #e9ecef;
+    border-radius: 4px;
+    margin-bottom: 5px;
+}
+
+.date-control {
+    margin: 15px 0;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    background-color: #f8f9fa;
+}
+
+/* Estilos para o logo */
+.logo-container {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+}
+
+.logo {
+    height: 80px;
+    width: auto;
+}
+
+/* Estilo para cabeçalho com título e botões */
+.header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.title-container h1 {
+    margin-bottom: 0;
+    font-size: 1.8rem;
+}
+
+/* Estilo para os botões */
+.buttons-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+/* Ajustes para responsividade */
+@media (max-width: 768px) {
+    .logo {
+        height: 60px;
+    }
+    
+    .logo-container {
+        margin-bottom: 15px;
+        justify-content: center;
+    }
+    
+    .header-row {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .title-container {
+        text-align: center;
+    }
+    
+    .buttons-container {
+        justify-content: center;
+        width: 100%;
+    }
+} 
