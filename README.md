@@ -558,7 +558,7 @@ Contribuições são bem-vindas! Por favor:
 Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
 
 ## 👤 Autor
-
+**Wesley Pestana**
 **Ron Williamsz**
 - GitHub: [@ron-williamsz](https://github.com/ron-williamsz)
 
